@@ -105,7 +105,8 @@ impl DrillStats {
 }
 
 fn compute_stats(sub_reports: &[Report]) -> DrillStats {
-  let mut hist = Histogram::<u64>::new_with_bounds(1, 60 * 60 * 1000, 2).unwrap();
+  let max_duration_us = 60 * 60 * 1_000 * 1_000; // 1 hour in microseconds
+  let mut hist = Histogram::<u64>::new_with_bounds(1, max_duration_us, 2).unwrap();
   let mut group_by_status = HashMap::new();
 
   for req in sub_reports {
@@ -113,7 +114,17 @@ fn compute_stats(sub_reports: &[Report]) -> DrillStats {
   }
 
   for r in sub_reports.iter() {
-    hist += (r.duration * 1_000.0) as u64;
+    let duration_us = (r.duration * 1_000.0) as u64;
+
+    if let Err(err) = hist.record(duration_us) {
+      eprintln!(
+        "warning: failed to record histogram value for request '{}' (duration={} ms, duration_us={}): {}",
+        r.name,
+        r.duration,
+        duration_us,
+        err
+      );
+    }
   }
 
   let total_requests = sub_reports.len();
