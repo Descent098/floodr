@@ -1,0 +1,156 @@
+---
+title: Asserts
+description: Describing how to assert properties of a response
+---
+
+Asserts are useful in situations where you want to consider a particular condition as a failure. The available fields to assert against can be found in the `drill::actions::AssignedRequest;` struct. 
+
+## Examples
+
+Below are examples of how to use the feature
+
+### Assert Status Code
+For example, if you're testing redirects, and you want to assert that the response is a 301 you could setup a YAML file with:
+
+```yaml
+# Assume a 301 is in place for /api/latest -> /api/v3
+plan:
+  - name: Fetch redirected route
+    request:
+      url: /api/latest
+    assign: latestRedirect
+  - name: Assert request response code
+    assert:
+      key: latestRedirect.status
+      value: 301
+```
+
+
+### Assert Everything
+
+Consider the simple server below using [gotham](https://gotham.rs/):
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+It will return a result like this:
+
+```http
+HTTP/1.1 200 OK
+Content-Length: 12
+Content-Type: text/plain
+Date: Sun, 05 Apr 2026 07:50:37 GMT
+X-Backend: gotham
+X-Request-Id: c762fb85-4e7e-4fd2-bf1e-d626f63b7a64
+
+Hello World!
+```
+
+We can then test everything:
+
+```yaml
+concurrency: 1
+base: 'http://localhost:4896'
+iterations: 2
+rampup: 1
+
+plan:
+  # Setup request and assign it to the name gothamServer
+  - name: Fetch route
+    request:
+      url: /
+    assign: gothamServer
+  # Begin Assertions
+  - name: Assert request response code
+    assert:
+      key: gothamServer.status
+      value: 200
+  - name: Assert x-backend header is gotham
+    assert:
+      key: gothamServer.headers["x-backend"]
+      value: gotham
+  - name: Assert URL
+    assert:
+      key: gothamServer.url
+      value: http://localhost:4896/
+  - name: Assert http version
+    assert:
+      key: gothamServer.version
+      value: http/1.1
+```
+
+which will then give us:
+
+```bash
+$> drill --benchmark benchmark.yaml --stats
+
+Concurrency 1
+Iterations 2
+Rampup 1
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 314ms
+Assert request response code gothamServer.status=200?
+Assert x-backend header is gotham gotham.headers["x-backend"]=gotham?
+Assert URL                gothamServer.url=http://localhost:4896/?
+Assert version            gothamServer.version=http/1.1?
+Fetch route               http://localhost:4896/ 200 OK 0ms
+Assert request response code gothamServer.status=200?
+Assert x-backend header is gotham gothamServer.headers["x-backend"]=gotham?
+Assert URL                gothamServer.url=http://localhost:4896/?
+Assert version            gothamServer.version=http/1.1?
+
+Fetch route               Total requests            2
+Fetch route               Successful requests       2
+Fetch route               Failed requests           0
+Fetch route               Median time per request   0ms
+Fetch route               Average time per request  157ms
+Fetch route               Sample standard deviation 157ms
+Fetch route               99.0'th percentile        315ms
+Fetch route               99.5'th percentile        315ms
+Fetch route               99.9'th percentile        315ms
+
+Time taken for tests      0.3 seconds
+Total requests            2
+Successful requests       2
+Failed requests           0
+Requests per second       6.07 [#/sec]
+Median time per request   0ms
+Average time per request  157ms
+Sample standard deviation 157ms
+99.0'th percentile        315ms
+99.5'th percentile        315ms
+99.9'th percentile        315ms
+```

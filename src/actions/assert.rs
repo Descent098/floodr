@@ -104,7 +104,15 @@ impl Runnable for Assert {
     let assertion = json!(self.value.to_owned());
 
     if !stored.eq(&assertion) {
-      panic!("Assertion mismatched: {stored} != {assertion}");
+      let msg = format!(
+          "{}{}{}",
+          "Assertion failed for action ".red(),
+          format!("\"{}\"", self.name).cyan().bold(),
+          format!(": {} != {}", stored, assertion).red()
+      );
+      print!("{}", msg);
+
+      panic!("{}", msg);
     }
   }
 }
