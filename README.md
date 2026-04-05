@@ -223,30 +223,6 @@ cargo build --release
 ./target/release/drill --benchmark benchmark.yml --stats
 ```
 
-### Dependencies
-
-OpenSSL is needed in order to compile Drill, whether it is through `cargo install`
-or when compiling from source with `cargo build`.
-
-Depending on your platform, the name of the dependencies may differ.
-
-#### Linux
-
-Install `libssl-dev` and `pkg-config` packages with your favorite package manager
-(if `libssl-dev` is not found, try other names like `openssl` or `openssl-devel`).
-
-#### macOS
-
-First, install the [Homebrew](https://brew.sh/) package manager.
-
-And then install `openssl` with Homebrew.
-
-#### Windows
-
-First, install [vcpkg](https://vcpkg.io/en/getting-started.html).
-
-And then run `vcpkg install openssl:x64-windows-static-md`.
-
 ## Demo
 
 [![demo](https://asciinema.org/a/164615.png)](https://asciinema.org/a/164615?autoplay=1)
