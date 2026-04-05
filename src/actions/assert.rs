@@ -1,3 +1,5 @@
+//! Defines the Assert action for checking response values against expected values.
+
 use async_trait::async_trait;
 use colored::*;
 use serde_json::json;
@@ -9,6 +11,58 @@ use crate::benchmark::{Context, Pool, Reports};
 use crate::config::Config;
 use crate::interpolator;
 
+/// Represents an assertion action in a benchmark plan. Used to verify that variables or responses match expected values.
+///
+/// # Fields
+///
+/// - `name` (`String`) - The name of the assert action (whill show up in CLI)
+/// - `key` (`String`) - The field to assert against
+/// - `value` (`String`) - The expected value of the field
+///
+/// # Examples
+///
+/// With a yaml file like:
+///
+/// ```yaml
+/// plan:
+///   - name: Fetch account
+///     request:
+///       url: /api/account
+///     assign: foo
+///   - name: Assert request response code
+///     assert:
+///       key: foo.status
+///       value: 200
+/// ```
+///
+/// This equates to something like:
+///
+/// ```
+/// use serde::Serialize;
+/// use drill::actions::Assert;
+///
+/// #[derive(Serialize)]
+/// struct AssertItemDetails {
+///     key: String,
+///     value: String,
+/// }
+///
+/// #[derive(Serialize)]
+/// struct AssertItem {
+///     name: String,
+///     assert: AssertItemDetails,
+/// }
+///
+/// let config = AssertItem {
+///     name: "Assert request response code".to_string(),
+///     assert: AssertItemDetails {
+///         key: "foo.status".to_string(),
+///         value: "200".to_string(),
+///     },
+/// };
+/// let value = serde_yaml::to_value(config).unwrap();
+/// let s = Assert::new(&value, None);
+/// ```
 #[derive(Clone)]
 pub struct Assert {
   name: String,
@@ -17,10 +71,12 @@ pub struct Assert {
 }
 
 impl Assert {
+  /// Checks if the provided YAML item represents an `Assert` action.
   pub fn is_that_you(item: &Value) -> bool {
     item.get("assert").and_then(|v| v.as_mapping()).is_some()
   }
 
+  /// Creates a new `Assert` action from a YAML item.
   pub fn new(item: &Value, _with_item: Option<Value>) -> Assert {
     let name = extract(item, "name");
     let assert_val = item.get("assert").expect("assert field is required");

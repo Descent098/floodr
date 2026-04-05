@@ -1,3 +1,8 @@
+//! Variable interpolation logic.
+//!
+//! Resolves variable placeholders (`{{ var }}`) using values from the 
+//! context maps, environment variables, or other configurations.
+
 use colored::*;
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
@@ -10,7 +15,7 @@ static INTERPOLATION_SUFFIX: &str = "}}";
 
 lazy_static! {
   pub static ref INTERPOLATION_REGEX: Regex = {
-    let regexp = format!("{}{}{}", regex::escape(INTERPOLATION_PREFIX), r" *([a-zA-Z]+[a-zA-Z\-\._\$0-9\[\]]*) *", regex::escape(INTERPOLATION_SUFFIX));
+    let regexp = format!("{}{}{}", regex::escape(INTERPOLATION_PREFIX), r#" *([a-zA-Z]+[a-zA-Z\-\._\$0-9\[\]"']*) *"#, regex::escape(INTERPOLATION_SUFFIX));
 
     Regex::new(regexp.as_str()).unwrap()
   };
@@ -59,8 +64,8 @@ impl<'a> Interpolator<'a> {
   }
 
   fn resolve_context_interpolation(&self, value: &str) -> Option<String> {
-    // convert "." and "[" to "/" and "]" to "" to look like a json pointer
-    let val: String = format!("/{}", value.replace(['.', '['], "/").replace(']', ""));
+    // convert "." and "[" to "/" and "]" and quotes to "" to look like a json pointer
+    let val: String = format!("/{}", value.replace(['.', '['], "/").replace([']', '"', '\''], ""));
 
     // force the context into a Value, and acess by pointer
     if let Some(item) = json!(self.context).pointer(&val).to_owned() {
@@ -120,6 +125,12 @@ mod tests {
     assert_eq!(interpolator.resolve("{{ Nested.this.that.those[2].deee.eeee }}", true), "eeep".to_string());
     assert_eq!(interpolator.resolve("{{ ArrayNested[0].a[1].aaa[0].aaaa }}", true), "123".to_string());
     assert_eq!(interpolator.resolve("{{ ArrayNested[0].a[1].aaa[0].$aaaa }}", true), "$123".to_string());
+    
+    // Add tests with quotes for dict accesses
+    context.insert(String::from("dict_with_quotes"), json!({"x-backend": "Flask", "other_key": "value"}));
+    let interpolator2 = Interpolator::new(&context);
+    assert_eq!(interpolator2.resolve(r#"{{ dict_with_quotes["x-backend"] }}"#, true), "Flask".to_string());
+    assert_eq!(interpolator2.resolve(r#"{{ dict_with_quotes['other_key'] }}"#, true), "value".to_string());
   }
 
   #[test]
