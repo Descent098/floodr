@@ -1,10 +1,10 @@
 [package]
-name = "drill"
+name = "floodr"
 version = "1.0.0"
-authors = ["Ferran Basora <fcsonline@gmail.com>"]
-description = "Drill is a HTTP load testing application written in Rust inspired by Ansible syntax"
-repository = "https://github.com/fcsonline/drill"
-keywords = ["performance", "http", "ansible", "jmeter"]
+authors = ["Ferran Basora <fcsonline@gmail.com>","Kieran Wood <kieran@canadiancoding.ca>"]
+description = "Floodr is a HTTP load testing application written in Rust inspired by Ansible syntax"
+repository = "https://github.com/descent098/floodr"
+keywords = ["performance", "http", "ansible", "jmeter", "load-testing", "testing", "qa"]
 license = "GPL-3.0"
 edition = "2024"
 

@@ -333,31 +333,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "drill"
-version = "1.0.0"
-dependencies = [
- "async-trait",
- "clap",
- "colored",
- "csv",
- "futures",
- "hdrhistogram",
- "hex",
- "lazy_static",
- "linked-hash-map",
- "num_cpus",
- "rand 0.8.5",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "serde_yaml",
- "tempfile",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -408,6 +383,31 @@ checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+]
+
+[[package]]
+name = "floodr"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "clap",
+ "colored",
+ "csv",
+ "futures",
+ "hdrhistogram",
+ "hex",
+ "lazy_static",
+ "linked-hash-map",
+ "num_cpus",
+ "rand 0.8.5",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "tokio",
+ "url",
 ]
 
 [[package]]
