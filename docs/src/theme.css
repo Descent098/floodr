@@ -27,3 +27,7 @@
 	--sl-color-gray-7: #edf8ff;
 	--sl-color-black: #ffffff;
 }
+
+mjx-container svg {
+  display: inline !important;
+}

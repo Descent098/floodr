@@ -1,7 +1,9 @@
 ---
-title: Asserts
+title: Asserts (TODO)
 description: Describing how to assert properties of a response
 ---
+import { Aside } from '@astrojs/starlight/components';
+import { Code } from '@astrojs/starlight/components';
 
 Asserts are useful in situations where you want to consider a particular condition as a failure. The available fields to assert against can be found in the `floodr::actions::AssignedRequest;` struct. 
 
@@ -12,8 +14,7 @@ Below are examples of how to use the feature
 ### Assert Status Code
 For example, if you're testing redirects, and you want to assert that the response is a 301 you could setup a YAML file with:
 
-```yaml
-# Assume a 301 is in place for /api/latest -> /api/v3
+<Code title="benchmark.yaml" lang="yaml" code={`# Assume a 301 is in place for /api/latest -> /api/v3
 plan:
   - name: Fetch redirected route
     request:
@@ -22,9 +23,9 @@ plan:
   - name: Assert request response code
     assert:
       key: latestRedirect.status
-      value: 301
-```
+      value: 301`}/>
 
+<Aside type="note">You **need** to do an `assign` to assert the value, the `name` will not work</Aside>
 
 ### Assert Everything
 

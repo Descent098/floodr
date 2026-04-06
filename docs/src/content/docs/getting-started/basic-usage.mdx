@@ -1,0 +1,168 @@
+---
+title: Basic Usage
+sidebar:
+    order: 3
+banner:
+  content: |
+    If you haven't installed yet
+    <a href="/floodr/getting-started/installation">check out the installation guide</a>
+---
+import { Code } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components';
+
+To work with floodr currently you will need to know [YAML](https://docs.ansible.com/projects/ansible/latest/reference_appendices/YAMLSyntax.html), I would recommend brushing up on it if you're not familiar. 
+
+## Single Request
+
+To get started let's look at a simple benchmark that just hits `http://localhost:4896/` once. Our file would look like this:
+
+<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+
+plan: # An array of actions to take
+  - name: Fetch route
+    request:
+      url: /
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+To run our file we would then run:
+
+```bash
+floodr --benchmark benchmark.yaml
+```
+
+Which results in output like this:
+
+```bash
+$> floodr --benchmark benchmark.yaml
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 307ms
+```
+
+
+To see the stats for our run, we can add the `--stats` flag:
+
+<Code frame="terminal" lang="bash" code={`$> floodr --benchmark benchmark.yaml --stats
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 321ms
+
+Fetch route               Total requests            1
+Fetch route               Successful requests       1
+Fetch route               Failed requests           0
+Fetch route               Median time per request   322ms
+Fetch route               Average time per request  321ms
+Fetch route               Sample standard deviation 0ms
+Fetch route               99.0'th percentile        322ms
+Fetch route               99.5'th percentile        322ms
+Fetch route               99.9'th percentile        322ms
+
+Time taken for tests      0.3 seconds
+Total requests            1
+Successful requests       1
+Failed requests           0
+Requests per second       3.11 [#/sec]
+Median time per request   322ms
+Average time per request  321ms
+Sample standard deviation 0ms
+99.0'th percentile        322ms
+99.5'th percentile        322ms
+99.9'th percentile        322ms`}/>
+
+## Multiple Threads & Iterations
+
+We could now bump it up to do 100 requests across 10 threads:
+
+<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+concurrency: 10 # Number of threads to run
+iterations: 100 # Number of times to run the actions defined in plan
+
+plan: # An array of actions to take
+  - name: Fetch route
+    request:
+      url: /`}/>
+
+## Multiple Actions
+
+We can also add more actions to do more things (keep in mind each action runs **per iteration**):
+
+<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+iterations: 10 # Number of times to run the actions defined in plan
+
+plan: # An array of actions to take
+  - name: Fetch route
+    request:
+      url: /
+  - name: Fetch route
+    request:
+      url: /hello`}/>
+
+This will run 20 requests (10 iterations of 1 request to `/` and 1 request to `/hello`)
+

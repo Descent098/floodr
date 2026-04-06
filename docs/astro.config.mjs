@@ -1,7 +1,11 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+
+// Markdown Plugins
 import mermaid from 'astro-mermaid';
+import remarkMath from 'remark-math';
+import rehypeMathjax from 'rehype-mathjax';
 
 // Starlight plugins
 import starlightUiTweaks from 'starlight-ui-tweaks'
@@ -52,33 +56,77 @@ export default defineConfig({
 				starlightSidebarTopics([
 					{
 						label: "Basics",
-						link: "/floodr/getting-started",
+						link: "/getting-started",
 						icon: "seti:html",
 						items: [
 							{
-								label: 'Gettting started',
-								autogenerate: { directory: "getting-starte" },
+								label: "Getting Started",
+								items: [
+										{
+											label: 'Gettting started',
+											link: "/getting-started",
+										},						{
+											label: 'Installation',
+											link: "/getting-started/installation",
+										},
+								]
 							},
 							{
-								label: 'Command Line Interface',
-								autogenerate: { directory: "cli" },
+								label: 'Usage',
+								items: [
+									{
+										label: "Basic Usage",
+										link:"/getting-started/basic-usage"
+									},
+									{
+										label: "Advanced Usage",
+										link:"/getting-started/advanced-usage"
+									}
+								]
 							},
 						],
 
+					},
+					{
+						label: "Benchmark Reference",
+						link: "/benchmark-reference",
+						icon: "document",
+						
+						items: [
+							{
+								label: "Basics",
+								link: "/benchmark-reference"
+							},
+							{
+								label: 'Actions',
+								autogenerate: { directory: "benchmark-reference/actions" },
+							},
+														{
+								label: 'Expandables',
+								autogenerate: { directory: "benchmark-reference/expandables" },
+							},
+						],
 					},
 
 					{
-						label: "Reference",
-						link: "/floodr/benchmark-reference",
-						icon: "seti:html",
+						label: "CLI Reference",
+						link: "/cli",
+						icon: "seti:shell",
+						
 						items: [
 							{
-								label: 'Benchmark File Reference',
-								autogenerate: { directory: "benchmark-reference" },
+								label: "Introduction",
+								link: "/cli"
+							},
+							{
+								label: 'Comparisons & Reports',
+								autogenerate: { directory: "cli/comparisons" },
 							},
 						],
 
 					},
+
+
 				],
 				), // end of sidebar config
 			],
@@ -86,6 +134,10 @@ export default defineConfig({
 		mermaid({
 			theme: "default",
 			autoTheme: true
-		})
+		}),
 	],
+	markdown: {
+		remarkPlugins: [remarkMath],
+		rehypePlugins: [rehypeMathjax],
+	},
 });
