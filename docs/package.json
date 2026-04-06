@@ -12,6 +12,11 @@
   "dependencies": {
     "@astrojs/starlight": "^0.38.2",
     "astro": "^6.0.1",
-    "sharp": "^0.34.2"
+    "astro-mermaid": "^2.0.1",
+    "sharp": "^0.34.2",
+    "starlight-contextual-menu": "^0.1.5",
+    "starlight-sidebar-swipe": "^0.2.0",
+    "starlight-sidebar-topics": "^0.7.1",
+    "starlight-ui-tweaks": "^0.2.2"
   }
 }
