@@ -1,9 +1,9 @@
-# Drill
+# floodr
 
-[![](https://img.shields.io/crates/v/drill.svg?ts=2)](https://crates.io/crates/drill)
-![](https://travis-ci.com/fcsonline/drill.svg?branch=master)
+[![](https://img.shields.io/crates/v/floodr.svg?ts=2)](https://crates.io/crates/floodr)
+![](https://travis-ci.com/fcsonline/floodr.svg?branch=master)
 
-Drill is a HTTP load testing application written in Rust. The main goal
+floodr is a HTTP load testing application written in Rust. The main goal
 for this project is to build a really lightweight tool as alternative to other
 that require JVM and other stuff.
 
@@ -16,8 +16,6 @@ syntax because it is really easy to use and extend.
 Here is an example for **benchmark.yml**:
 
 ```yaml
----
-
 concurrency: 4
 base: 'http://localhost:9000'
 iterations: 5
@@ -202,25 +200,25 @@ If you want to know more about the benchmark file syntax, [read this](./SYNTAX.m
 
 ## Install
 
-Right now, the easiest way to get `drill` is to go to the
-[latest release](https://github.com/fcsonline/drill/releases/latest)
+Right now, the easiest way to get `floodr` is to go to the
+[latest release](https://github.com/fcsonline/floodr/releases/latest)
 page and download the binary file for your platform.
 
 
-Another way to install `drill`, if you have [Rust](https://rustup.rs/) available in
+Another way to install `floodr`, if you have [Rust](https://rustup.rs/) available in
 your system, is with [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html):
 
 ```
-cargo install drill
-drill --benchmark benchmark.yml --stats
+cargo install floodr
+floodr --benchmark benchmark.yml --stats
 ```
 
 or download the source code and compile it:
 
 ```
-git clone git@github.com:fcsonline/drill.git && cd drill
+git clone git@github.com:descent098/floodr.git && cd floodr
 cargo build --release
-./target/release/drill --benchmark benchmark.yml --stats
+./target/release/floodr --benchmark benchmark.yml --stats
 ```
 
 ## Demo
@@ -229,11 +227,11 @@ cargo build --release
 
 ## Features
 
-This is the list of all features supported by the current version of `drill`:
+This is the list of all features supported by the current version of `floodr`:
 
 - **Concurrency:** run your benchmarks choosing the number of concurrent iterations.
 - **Multi iterations:** specify the number of iterations you want to run the benchmark.
-- **Ramp-up:** specify the amount of time, in seconds, that it will take `drill` to start all iterations.
+- **Ramp-up:** specify the amount of time, in seconds, that it will take `floodr` to start all iterations.
 - **Delay:** introduce controlled delay between requests. Example: [delay.yml](./example/delay.yml)
 - **Dynamic urls:** execute requests with dynamic interpolations in the url, like `/api/users/{{ item }}`
 - **Dynamic headers:** execute requests with dynamic headers. Example: [headers.yml](./example/headers.yml)
@@ -259,14 +257,14 @@ production environments.
 
 ## Command line interface
 
-Full list of cli options, which is available under `drill --help`
+Full list of cli options, which is available under `floodr --help`
 
 ```
-drill 0.9.0
+floodr 0.9.0
 HTTP load testing application written in Rust inspired by Ansible syntax
 
 USAGE:
-    drill [FLAGS] [OPTIONS] --benchmark <benchmark>
+    floodr [FLAGS] [OPTIONS] --benchmark <benchmark>
 
 FLAGS:
     -h, --help                      Prints help information
