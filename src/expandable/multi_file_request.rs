@@ -1,3 +1,18 @@
+//! File driven request expansion.
+//!
+//! Expands multiple requests iterating over lines of a text file.
+//! Each line is treated as an item for interpolation.
+//!
+//! # Examples
+//!
+//! ```yaml
+//! plan:
+//!   - name: Fetch from list
+//!     request:
+//!       url: /api/{{ item }}
+//!     with_items_from_file: list.txt
+//! ```
+
 use super::pick;
 use crate::actions::Request;
 use crate::benchmark::Benchmark;
@@ -8,10 +23,61 @@ use rand::thread_rng;
 use serde_yaml::Value;
 use std::path::Path;
 
+/// Checks if the provided YAML item represents a file-expanded request action.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item to check
+///
+/// # Returns
+///
+/// - `bool` - True if the item is a file-expanded request action
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use serde_yaml::Value;
+/// use floodr::expandable::multi_file_request;
+///
+/// let item = serde_yaml::from_str("
+/// request:
+///   url: /api/{{ item }}
+/// with_items_from_file: list.txt
+/// ").unwrap();
+/// assert!(multi_file_request::is_that_you(&item));
+/// ```
 pub fn is_that_you(item: &Value) -> bool {
   item.get("request").and_then(|v| v.as_mapping()).is_some() && (item.get("with_items_from_file").and_then(|v| v.as_str()).is_some() || item.get("with_items_from_file").and_then(|v| v.as_mapping()).is_some())
 }
 
+/// Expands a file-expanded request into multiple `Request` actions.
+///
+/// # Arguments
+///
+/// - `parent_path` (`&str`) - The path of the parent file, used to resolve the text file path
+/// - `item` (`&Value`) - The YAML item representing the file-expanded request
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+///
+/// # Panics
+///
+/// - Panics if the text file path contains interpolation markers `{{ ... }}`
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::benchmark::Benchmark;
+/// use floodr::expandable::multi_file_request;
+/// use serde_yaml::Value;
+///
+/// let mut benchmark = Benchmark::new();
+/// let item = serde_yaml::from_str("
+/// name: Fetch from list
+/// request:
+///   url: /api/{{ item }}
+/// with_items_from_file: list.txt
+/// ").unwrap();
+/// multi_file_request::expand("benchmark.yml", &item, &mut benchmark);
+/// ```
 pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
   let with_items_path = if let Some(with_items_path) = item.get("with_items_from_file").and_then(|v| v.as_str()) {
     with_items_path

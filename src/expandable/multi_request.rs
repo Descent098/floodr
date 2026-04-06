@@ -1,3 +1,21 @@
+//! Simple list driven request expansion.
+//!
+//! Expands requests iterating over a literal list provided in the YAML.
+//! Each item in the list is used for interpolation in the request.
+//!
+//! # Examples
+//!
+//! ```yaml
+//! plan:
+//!   - name: Fetch items
+//!     request:
+//!       url: /api/{{ item }}
+//!     with_items:
+//!       - alpha
+//!       - beta
+//!       - gamma
+//! ```
+
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use serde_yaml::Value;
@@ -7,10 +25,64 @@ use crate::actions::Request;
 use crate::benchmark::Benchmark;
 use crate::interpolator::INTERPOLATION_REGEX;
 
+/// Checks if the provided YAML item represents a literal list-expanded request action.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item to check
+///
+/// # Returns
+///
+/// - `bool` - True if the item is a list-expanded request action
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use serde_yaml::Value;
+/// use floodr::expandable::multi_request;
+///
+/// let item = serde_yaml::from_str("
+/// request:
+///   url: /api/{{ item }}
+/// with_items:
+///   - item1
+///   - item2
+/// ").unwrap();
+/// assert!(multi_request::is_that_you(&item));
+/// ```
 pub fn is_that_you(item: &Value) -> bool {
   item.get("request").and_then(|v| v.as_mapping()).is_some() && item.get("with_items").and_then(|v| v.as_sequence()).is_some()
 }
 
+/// Expands a literal list-expanded request into multiple `Request` actions.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item representing the list-expanded request
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+///
+/// # Panics
+///
+/// - Panics if any of the `with_items` children contain interpolation markers `{{ ... }}`
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::benchmark::Benchmark;
+/// use floodr::expandable::multi_request;
+/// use serde_yaml::Value;
+///
+/// let mut benchmark = Benchmark::new();
+/// let item = serde_yaml::from_str("
+/// name: Fetch items
+/// request:
+///   url: /api/{{ item }}
+/// with_items:
+///   - a
+///   - b
+/// ").unwrap();
+/// multi_request::expand(&item, &mut benchmark);
+/// ```
 pub fn expand(item: &Value, benchmark: &mut Benchmark) {
   if let Some(with_items) = item.get("with_items").and_then(|v| v.as_sequence()) {
     let mut with_items_list = with_items.clone();

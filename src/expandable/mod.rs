@@ -1,3 +1,31 @@
+//! Provides the code for handling expandable directives (things that expand into multiple actions) such as iteration picking and random shuffling.
+//!
+//! When using a benchmark file, you can use the following expandable directives:
+//! - `include` - Includes another benchmark file
+//! - `with_items` - Dispatches multiple requests based on a literal list
+//! - `with_items_range` - Dispatches multiple requests based on a numeric range
+//! - `with_items_from_csv` - Dispatches multiple requests based on a CSV file
+//! - `with_items_from_file` - Dispatches multiple requests based on a text file
+//!
+//! Which correspond to the modules in this directory respectively.
+//!
+//! # Examples
+//!
+//! The below YAML
+//!
+//! ```yaml
+//! plan:
+//!   - name: Fetch account
+//!     request:
+//!       url: /api/{{ item }}
+//!     with_items:
+//!       - 1
+//!       - 2
+//!       - 3
+//! ```
+//!
+//! Would result in three `Request` actions being created and added to the benchmark.
+
 pub mod include;
 
 mod multi_csv_request;
@@ -7,6 +35,33 @@ mod multi_request;
 
 use serde_yaml::Value;
 
+/// Determines the number of items to pick from a list based on an optional 'pick' attribute.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item containing the 'pick' attribute
+/// - `with_items` (`&[Value]`) - The list of items to pick from
+///
+/// # Returns
+///
+/// - `usize` - The number of items to pick
+///
+/// # Panics
+///
+/// - Panics if 'pick' is negative
+/// - Panics if 'pick' is greater than the number of available items
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use serde_yaml::Value;
+/// use floodr::expandable::pick;
+///
+/// let item = serde_yaml::from_str("pick: 2").unwrap();
+/// let with_items = vec![Value::from(1), Value::from(2), Value::from(3)];
+/// let n = pick(&item, &with_items);
+/// assert_eq!(n, 2);
+/// ```
 pub fn pick(item: &Value, with_items: &[Value]) -> usize {
   match item.get("pick").and_then(|v| v.as_i64()) {
     Some(value) => {

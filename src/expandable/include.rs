@@ -1,3 +1,16 @@
+//! Include action expansion handling.
+//!
+//! Handles expanding `include: file.yml` directives from benchmark plans.
+//! This allows for modularizing benchmark files and reusing parts of a plan.
+//!
+//! # Examples
+//!
+//! ```yaml
+//! plan:
+//!   - name: Include external plan
+//!     include: auth_steps.yml
+//! ```
+
 use serde_yaml::Value;
 use std::path::Path;
 
@@ -10,10 +23,54 @@ use crate::tags::Tags;
 
 use crate::reader;
 
+/// Checks if the provided YAML item represents an `include` action.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item to check
+///
+/// # Returns
+///
+/// - `bool` - True if the item is an include directive
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use serde_yaml::Value;
+/// use floodr::expandable::include;
+///
+/// let item = serde_yaml::from_str("include: auth.yml").unwrap();
+/// assert!(include::is_that_you(&item));
+/// ```
 pub fn is_that_you(item: &Value) -> bool {
   item.get("include").and_then(|v| v.as_str()).is_some()
 }
 
+/// Expands an `include` action by reading the specified file and adding its contents to the benchmark.
+///
+/// # Arguments
+///
+/// - `parent_path` (`&str`) - The path of the parent file, used to resolve relative paths
+/// - `item` (`&Value`) - The YAML item representing the include action
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+/// - `tags` (`&Tags`) - The tags to filter the included items
+///
+/// # Panics
+///
+/// - Panics if the `include` path contains interpolation markers `{{ ... }}`
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::benchmark::Benchmark;
+/// use floodr::tags::Tags;
+/// use floodr::expandable::include;
+/// use serde_yaml::Value;
+///
+/// let mut benchmark = Benchmark::new();
+/// let item = serde_yaml::from_str("include: tests.yml").unwrap();
+/// include::expand("benchmark.yml", &item, &mut benchmark, &Tags::new(None, None));
+/// ```
 pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark, tags: &Tags) {
   let include_path = item.get("include").and_then(|v| v.as_str()).unwrap();
 
@@ -27,6 +84,31 @@ pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark, tags: 
   expand_from_filepath(final_path, benchmark, None, tags);
 }
 
+/// Reads a benchmark file from a path and expands its contents into the provided benchmark.
+///
+/// This handles nested includes and various action types (request, delay, exec, etc.).
+///
+/// # Arguments
+///
+/// - `parent_path` (`&str`) - The path of the file to read
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+/// - `accessor` (`Option<&str>`) - Optional YAML accessor to read a sub-property
+/// - `tags` (`&Tags`) - The tags to filter the items
+///
+/// # Panics
+///
+/// - Panics if it encounters an unknown action type
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::benchmark::Benchmark;
+/// use floodr::tags::Tags;
+/// use floodr::expandable::include;
+///
+/// let mut benchmark = Benchmark::new();
+/// include::expand_from_filepath("auth.yml", &mut benchmark, None, &Tags::new(None, None));
+/// ```
 pub fn expand_from_filepath(parent_path: &str, benchmark: &mut Benchmark, accessor: Option<&str>, tags: &Tags) {
   let docs = reader::read_file_as_yml(parent_path);
   let items = reader::read_yaml_doc_accessor(&docs[0], accessor);

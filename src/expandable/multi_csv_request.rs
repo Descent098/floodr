@@ -1,3 +1,18 @@
+//! CSV driven request expansion.
+//!
+//! Dispatches multiple requests based on rows from a provided CSV file dataset.
+//! Each row in the CSV is used as an 'item' for interpolation in the request.
+//!
+//! # Examples
+//!
+//! ```yaml
+//! plan:
+//!   - name: Fetch users
+//!     request:
+//!       url: /api/users/{{ item.id }}
+//!     with_items_from_csv: users.csv
+//! ```
+
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use serde_yaml::Value;
@@ -9,10 +24,62 @@ use crate::benchmark::Benchmark;
 use crate::interpolator::INTERPOLATION_REGEX;
 use crate::reader;
 
+/// Checks if the provided YAML item represents a CSV-expanded request action.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item to check
+///
+/// # Returns
+///
+/// - `bool` - True if the item is a CSV-expanded request action
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use serde_yaml::Value;
+/// use floodr::expandable::multi_csv_request;
+///
+/// let item = serde_yaml::from_str("
+/// request:
+///   url: /api/users
+/// with_items_from_csv: users.csv
+/// ").unwrap();
+/// assert!(multi_csv_request::is_that_you(&item));
+/// ```
 pub fn is_that_you(item: &Value) -> bool {
   item.get("request").and_then(|v| v.as_mapping()).is_some() && (item.get("with_items_from_csv").and_then(|v| v.as_str()).is_some() || item.get("with_items_from_csv").and_then(|v| v.as_mapping()).is_some())
 }
 
+/// Expands a CSV-expanded request into multiple `Request` actions.
+///
+/// # Arguments
+///
+/// - `parent_path` (`&str`) - The path of the parent file, used to resolve the CSV path
+/// - `item` (`&Value`) - The YAML item representing the CSV-expanded request
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+///
+/// # Panics
+///
+/// - Panics if the CSV file path contains interpolation markers `{{ ... }}`
+/// - Panics if `with_items_from_csv` is not correctly specified
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::benchmark::Benchmark;
+/// use floodr::expandable::multi_csv_request;
+/// use serde_yaml::Value;
+///
+/// let mut benchmark = Benchmark::new();
+/// let item = serde_yaml::from_str("
+/// name: Fetch users
+/// request:
+///   url: /api/users/{{ item.id }}
+/// with_items_from_csv: users.csv
+/// ").unwrap();
+/// multi_csv_request::expand("benchmark.yml", &item, &mut benchmark);
+/// ```
 pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
   let (with_items_path, quote_char) = if let Some(with_items_path) = item.get("with_items_from_csv").and_then(|v| v.as_str()) {
     (with_items_path, b'\"')

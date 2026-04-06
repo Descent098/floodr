@@ -1,3 +1,20 @@
+//! Range driven request expansion.
+//!
+//! Allows dispatching multiple requests by iterating over an integer range.
+//!
+//! # Examples
+//!
+//! ```yaml
+//! plan:
+//!   - name: Sequential requests
+//!     request:
+//!       url: /api/items/{{ item }}
+//!     with_items_range:
+//!       start: 1
+//!       stop: 10
+//!       step: 1
+//! ```
+
 use std::convert::TryInto;
 
 use rand::seq::SliceRandom;
@@ -9,10 +26,66 @@ use crate::interpolator::INTERPOLATION_REGEX;
 use crate::actions::Request;
 use crate::benchmark::Benchmark;
 
+/// Checks if the provided YAML item represents a range-expanded request action.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item to check
+///
+/// # Returns
+///
+/// - `bool` - True if the item is a range-expanded request action
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use serde_yaml::Value;
+/// use floodr::expandable::multi_iter_request;
+///
+/// let item = serde_yaml::from_str("
+/// request:
+///   url: /api/{{ item }}
+/// with_items_range:
+///   start: 1
+///   stop: 5
+/// ").unwrap();
+/// assert!(multi_iter_request::is_that_you(&item));
+/// ```
 pub fn is_that_you(item: &Value) -> bool {
   item.get("request").and_then(|v| v.as_mapping()).is_some() && item.get("with_items_range").and_then(|v| v.as_mapping()).is_some()
 }
 
+/// Expands a range-expanded request into multiple `Request` actions.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item representing the range-expanded request
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+///
+/// # Panics
+///
+/// - Panics if `start`, `step`, or `stop` contain interpolation markers `{{ ... }}`
+/// - Panics if `start` or `stop` properties are missing
+/// - Panics if `start`, `step`, or `stop` are not numbers
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::benchmark::Benchmark;
+/// use floodr::expandable::multi_iter_request;
+/// use serde_yaml::Value;
+///
+/// let mut benchmark = Benchmark::new();
+/// let item = serde_yaml::from_str("
+/// name: Sequential requests
+/// request:
+///   url: /api/items/{{ item }}
+/// with_items_range:
+///   start: 1
+///   stop: 10
+/// ").unwrap();
+/// multi_iter_request::expand(&item, &mut benchmark);
+/// ```
 pub fn expand(item: &Value, benchmark: &mut Benchmark) {
   if let Some(with_iter_items) = item.get("with_items_range").and_then(|v| v.as_mapping()) {
     let lstart = Value::String("start".into());
