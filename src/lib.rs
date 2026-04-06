@@ -1,16 +1,16 @@
-//! Drill library crate
+//! Floodr library crate
 //!
-//! Provides the core execution logic for the Drill benchmark tool.
+//! Provides the core execution logic for Floodr
 
 pub mod actions;
-mod benchmark;
-mod checker;
-mod config;
-mod expandable;
-mod interpolator;
-mod reader;
-mod tags;
-mod writer;
+pub mod benchmark;
+pub mod checker;
+pub mod config;
+pub mod expandable;
+pub mod interpolator;
+pub mod reader;
+pub mod tags;
+pub mod writer;
 
 use crate::actions::Report;
 use clap::crate_version;
@@ -21,7 +21,20 @@ use linked_hash_map::LinkedHashMap;
 use std::collections::HashMap;
 use std::process;
 
-/// Main entry point of the drill application, exported for the binary caller
+/// Main entry point of the floodr application, exported for the binary caller.
+///
+/// It parses command line arguments and initiates the benchmark execution based
+/// on the provided configuration.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use floodr;
+///
+/// fn main() {
+///     floodr::main();
+/// }
+/// ```
 pub fn main() {
   let matches = app_args();
   let benchmark_file = matches.value_of("benchmark").unwrap();
@@ -65,9 +78,16 @@ pub fn main() {
   process::exit(0)
 }
 
-/// Configure and parse command line arguments for the application
+/// Configure and parse command line arguments for the application.
+///
+/// This uses the `clap` crate to define the CLI interface, including options for
+/// benchmarks, reports, statistics, and tags.
+///
+/// # Returns
+///
+/// - `clap::ArgMatches<'a>` - The parsed command line arguments.
 fn app_args<'a>() -> clap::ArgMatches<'a> {
-  App::new("drill")
+  App::new("floodr")
     .version(crate_version!())
     .about("HTTP load testing application written in Rust inspired by Ansible syntax")
     .arg(Arg::with_name("benchmark").help("Sets the benchmark file").long("benchmark").short("b").required(true).takes_value(true))
@@ -88,35 +108,80 @@ fn app_args<'a>() -> clap::ArgMatches<'a> {
     .get_matches()
 }
 
-/// Holds the statistics for a drill execution
-struct DrillStats {
-  total_requests: usize,
-  successful_requests: usize,
-  failed_requests: usize,
-  hist: Histogram<u64>,
+/// Holds details about the results of a floodr execution.
+///
+/// This struct captures aggregate metrics across all requests in a benchmark.
+///
+/// # Fields
+///
+/// - `total_requests` (`usize`) - The total number of requests run after all actions completed in the plan.
+/// - `successful_requests` (`usize`) - The total number of successful requests (HTTP 2xx).
+/// - `failed_requests` (`usize`) - The total number of failed requests.
+/// - `hist` (`Histogram<u64>`) - The histogram of response durations in microseconds.
+pub struct FloodrStats {
+  pub total_requests: usize,      // The total number of requests run after all actions completed in the plan
+  pub successful_requests: usize, // The total number of successful requests run after all actions completed in the plan
+  pub failed_requests: usize,     // The total number of failed requests run after all actions completed in the plan
+  pub hist: Histogram<u64>,       // The histogram of data about the run
 }
 
-impl DrillStats {
-  /// Returns the mean duration of the requests in microseconds
-  fn mean_duration(&self) -> f64 {
+impl FloodrStats {
+  /// Returns the mean duration of the requests in milliseconds.
+  ///
+  /// # Returns
+  ///
+  /// - `f64` - The mean duration.
+  pub fn mean_duration(&self) -> f64 {
     self.hist.mean() / 1_000.0
   }
-  /// Returns the median duration of the requests in microseconds
-  fn median_duration(&self) -> f64 {
+  /// Returns the median (50th percentile) duration of the requests in milliseconds.
+  ///
+  /// # Returns
+  ///
+  /// - `f64` - The median duration.
+  pub fn median_duration(&self) -> f64 {
     self.hist.value_at_quantile(0.5) as f64 / 1_000.0
   }
-  /// Returns the standard deviation of the requests in microseconds
-  fn stdev_duration(&self) -> f64 {
+  /// Returns the sample standard deviation of durations in milliseconds.
+  ///
+  /// # Returns
+  ///
+  /// - `f64` - The standard deviation.
+  pub fn stdev_duration(&self) -> f64 {
     self.hist.stdev() / 1_000.0
   }
-  /// Returns the value at a given quantile in microseconds
-  fn value_at_quantile(&self, quantile: f64) -> f64 {
+  /// Returns the duration at a given percentile in milliseconds.
+  ///
+  /// # Arguments
+  ///
+  /// - `quantile` (`f64`) - The quantile (0.0 to 1.0).
+  ///
+  /// # Returns
+  ///
+  /// - `f64` - The value at the specified quantile.
+  pub fn value_at_quantile(&self, quantile: f64) -> f64 {
     self.hist.value_at_quantile(quantile) as f64 / 1_000.0
   }
 }
 
-/// Compute statistics for the benchmark execution
-fn compute_stats(sub_reports: &[Report]) -> DrillStats {
+/// Computes aggregate statistics for a set of request reports.
+///
+/// # Arguments
+///
+/// - `sub_reports` (`&[Report]`) - A slice of request reports to analyze.
+///
+/// # Returns
+///
+/// - `FloodrStats` - The computed statistics including totals and duration histogram.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::actions::Report;
+/// let reports = vec![Report { name: "test".to_string(), duration: 100.0, status: 200 }];
+/// let stats = compute_stats(&reports);
+/// ```
+pub fn compute_stats(sub_reports: &[Report]) -> FloodrStats {
   let max_duration_us = 60 * 60 * 1_000 * 1_000; // 1 hour in microseconds
   let mut hist = Histogram::<u64>::new_with_bounds(1, max_duration_us, 2).unwrap();
   let mut group_by_status = HashMap::new();
@@ -137,7 +202,7 @@ fn compute_stats(sub_reports: &[Report]) -> DrillStats {
   let successful_requests = group_by_status.entry(2).or_insert_with(Vec::new).len();
   let failed_requests = total_requests - successful_requests;
 
-  DrillStats {
+  FloodrStats {
     total_requests,
     successful_requests,
     failed_requests,
@@ -145,8 +210,24 @@ fn compute_stats(sub_reports: &[Report]) -> DrillStats {
   }
 }
 
-/// Format time for display
-fn format_time(tdiff: f64, nanosec: bool) -> String {
+/// Formats a time duration into a human-readable string.
+///
+/// # Arguments
+///
+/// - `tdiff` (`f64`) - The duration in milliseconds.
+/// - `nanosec` (`bool`) - Whether to output the value in nanoseconds.
+///
+/// # Returns
+///
+/// - `String` - The formatted duration (e.g., "100ms" or "100000ns").
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let time = format_time(100.5, false);
+/// assert_eq!(time, "101ms");
+/// ```
+pub fn format_time(tdiff: f64, nanosec: bool) -> String {
   if nanosec {
     (1_000_000.0 * tdiff).round().to_string() + "ns"
   } else {
@@ -154,8 +235,16 @@ fn format_time(tdiff: f64, nanosec: bool) -> String {
   }
 }
 
-/// Shows textual statistics output in the terminal
-fn show_stats(list_reports: &[Vec<Report>], stats_option: bool, nanosec: bool, duration: f64) {
+/// Displays formatted statistics reports into the standard output.
+///
+/// # Arguments
+///
+/// - `list_reports` (`&[Vec<Report>]`) - A collection of report vectors (one per iteration).
+/// - `stats_option` (`bool`) - Whether to actually display the statistics.
+/// - `nanosec` (`bool`) - Whether to display durations in nanoseconds.
+/// - `duration` (`f64`) - The total execution duration of the benchmark.
+///
+pub fn show_stats(list_reports: &[Vec<Report>], stats_option: bool, nanosec: bool, duration: f64) {
   if !stats_option {
     return;
   }
@@ -200,8 +289,24 @@ fn show_stats(list_reports: &[Vec<Report>], stats_option: bool, nanosec: bool, d
   println!("{:width2$} {}", "99.9'th percentile".yellow(), format_time(global_stats.value_at_quantile(0.999), nanosec).purple(), width2 = 25);
 }
 
-/// Compares the current benchmark against a previous one given a threshold
-fn compare_benchmark(list_reports: &[Vec<Report>], compare_path_option: Option<&str>, threshold_option: Option<&str>) {
+/// Compares current execution metrics against a previous benchmark report and checks for performance regressions.
+///
+/// # Arguments
+///
+/// - `list_reports` (`&[Vec<Report>]`) - The current benchmark results.
+/// - `compare_path_option` (`Option<&str>`) - Path to the baseline report file.
+/// - `threshold_option` (`Option<&str>`) - The threshold in milliseconds allowed for performance drops.
+///
+/// # Panics
+///
+/// - Panics if a `compare_path` is provided but no `threshold` is specified.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// compare_benchmark(&reports, Some("baseline.yml"), Some("50"));
+/// ```
+pub fn compare_benchmark(list_reports: &[Vec<Report>], compare_path_option: Option<&str>, threshold_option: Option<&str>) {
   if let Some(compare_path) = compare_path_option {
     if let Some(threshold) = threshold_option {
       let compare_result = checker::compare(list_reports, compare_path, threshold);

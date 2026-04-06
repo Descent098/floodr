@@ -1,8 +1,21 @@
+//! Tag filtering logic.
+//!
+//! Exposes structures and functionality to filter out or force include
+//! benchmark items based on their associated tags ( Ansible-style tags ).
+
 use crate::reader;
 use colored::*;
 use serde_yaml::Value;
 use std::collections::HashSet;
 
+/// Represents a set of include and exclude filters (tags).
+///
+/// Tags allow for choosing exactly which parts of a benchmark to execute.
+///
+/// # Fields
+///
+/// - `tags` (`Option<HashSet<&'a str>>`) - A set of tags to include.
+/// - `skip_tags` (`Option<HashSet<&'a str>>`) - A set of tags to exclude.
 #[derive(Debug)]
 pub struct Tags<'a> {
   pub tags: Option<HashSet<&'a str>>,
@@ -10,6 +23,26 @@ pub struct Tags<'a> {
 }
 
 impl<'a> Tags<'a> {
+  /// Initializes a new `Tags` instance from comma-separated string options.
+  ///
+  /// # Arguments
+  ///
+  /// - `tags_option` (`Option<&'a str>`) - A comma-separated string of tags to include.
+  /// - `skip_tags_option` (`Option<&'a str>`) - A comma-separated string of tags to skip.
+  ///
+  /// # Returns
+  ///
+  /// - `Self` - A new `Tags` instance.
+  ///
+  /// # Panics
+  ///
+  /// - Panics if both `tags` and `skip-tags` share any common tag values.
+  ///
+  /// # Examples
+  ///
+  /// ```rust,ignore
+  /// let tags = Tags::new(Some("tag1,tag2"), Some("tag3"));
+  /// ```
   pub fn new(tags_option: Option<&'a str>, skip_tags_option: Option<&'a str>) -> Self {
     let tags: Option<HashSet<&str>> = tags_option.map(|m| m.split(',').map(|s| s.trim()).collect());
     let skip_tags: Option<HashSet<&str>> = skip_tags_option.map(|m| m.split(',').map(|s| s.trim()).collect());
@@ -26,6 +59,21 @@ impl<'a> Tags<'a> {
     }
   }
 
+  /// Determines if a benchmark item should be skipped based on its tags.
+  ///
+  /// Following Ansible-style logic:
+  /// - Items with `always` are run unless explicitly skipped.
+  /// - Items with `never` are skipped unless explicitly included.
+  /// - If `tags` are provided, only items with matching tags (or `always`) are run.
+  /// - If `skip_tags` are provided, items matching those tags are skipped.
+  ///
+  /// # Arguments
+  ///
+  /// - `item` (`&Value`) - The YAML representation of the benchmark action.
+  ///
+  /// # Returns
+  ///
+  /// - `bool` - True if the item should be skipped, false otherwise.
   pub fn should_skip_item(&self, item: &Value) -> bool {
     match item.get("tags").and_then(|v| v.as_sequence()) {
       Some(item_tags_raw) => {
@@ -56,6 +104,16 @@ impl<'a> Tags<'a> {
   }
 }
 
+/// Lists and prints all benchmark tasks (actions) that would be executed given the filters.
+///
+/// # Arguments
+///
+/// - `benchmark_file` (`&str`) - Path to the benchmark YAML file.
+/// - `tags` (`&Tags`) - The current tag filters to apply when listing tasks.
+///
+/// # Panics
+///
+/// - Panics if no items remain after filtering.
 pub fn list_benchmark_file_tasks(benchmark_file: &str, tags: &Tags) {
   let docs = reader::read_file_as_yml(benchmark_file);
   let items = reader::read_yaml_doc_accessor(&docs[0], Some("plan"));
@@ -86,6 +144,15 @@ pub fn list_benchmark_file_tasks(benchmark_file: &str, tags: &Tags) {
   }
 }
 
+/// Lists and prints all unique tags found within a benchmark file's plan.
+///
+/// # Arguments
+///
+/// - `benchmark_file` (`&str`) - Path to the benchmark YAML file.
+///
+/// # Panics
+///
+/// - Panics if the benchmark file contains no plan items.
 pub fn list_benchmark_file_tags(benchmark_file: &str) {
   let docs = reader::read_file_as_yml(benchmark_file);
   let items = reader::read_yaml_doc_accessor(&docs[0], Some("plan"));

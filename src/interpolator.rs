@@ -1,6 +1,6 @@
 //! Variable interpolation logic.
 //!
-//! Resolves variable placeholders (`{{ var }}`) using values from the 
+//! Resolves variable placeholders (`{{ var }}`) using values from the
 //! context maps, environment variables, or other configurations.
 
 use colored::*;
@@ -21,17 +21,50 @@ lazy_static! {
   };
 }
 
+/// A utility struct that performs placeholder interpolation within strings.
+///
+/// It uses a `Context` (JSON map) and environment variables as sources for
+/// resolving placeholders like `{{ name }}` or `{{ nested.property }}`.
 pub struct Interpolator<'a> {
   context: &'a Context,
 }
 
 impl<'a> Interpolator<'a> {
+  /// Creates a new `Interpolator` with the given context.
+  ///
+  /// # Arguments
+  ///
+  /// - `context` (`&'a Context`) - The context containing variable values.
+  ///
+  /// # Returns
+  ///
+  /// - `Interpolator<'a>` - A new `Interpolator` instance.
   pub fn new(context: &'a Context) -> Interpolator<'a> {
     Interpolator {
       context,
     }
   }
 
+  /// Resolves all placeholders in a string.
+  ///
+  /// # Arguments
+  ///
+  /// - `url` (`&str`) - The input string containing potential placeholders.
+  /// - `strict` (`bool`) - If true, panics on unknown variables. Otherwise, resolves to empty strings.
+  ///
+  /// # Returns
+  ///
+  /// - `String` - The interpolated string.
+  ///
+  /// # Panics
+  ///
+  /// - Panics in strict mode if a variable cannot be resolved.
+  ///
+  /// # Examples
+  ///
+  /// ```rust,ignore
+  /// let resolved = interpolator.resolve("Hello {{ name }}", true);
+  /// ```
   pub fn resolve(&self, url: &str, strict: bool) -> String {
     INTERPOLATION_REGEX
       .replace_all(url, |caps: &Captures| {
@@ -46,6 +79,8 @@ impl<'a> Interpolator<'a> {
         }
 
         if strict {
+          let msg = format!("\n{}{}{}", "Unknown".red(), format!(" '{}' ", &capture).red(), "variable!".red(),);
+          eprintln!("{}", msg);
           panic!("Unknown '{}' variable!", &capture);
         }
 
@@ -56,6 +91,15 @@ impl<'a> Interpolator<'a> {
       .to_string()
   }
 
+  /// Resolves a variable from system environment variables.
+  ///
+  /// # Arguments
+  ///
+  /// - `value` (`&str`) - The name of the environment variable.
+  ///
+  /// # Returns
+  ///
+  /// - `Option<String>` - The value if found, otherwise `None`.
   fn resolve_environment_interpolation(&self, value: &str) -> Option<String> {
     match std::env::vars().find(|tuple| tuple.0 == value) {
       Some(tuple) => Some(tuple.1),
@@ -63,6 +107,17 @@ impl<'a> Interpolator<'a> {
     }
   }
 
+  /// Resolves a variable from the stored context map using JSON pointer logic.
+  ///
+  /// This supports dot notation and array indexing for nested properties.
+  ///
+  /// # Arguments
+  ///
+  /// - `value` (`&str`) - The context key or path (e.g., "auth.token").
+  ///
+  /// # Returns
+  ///
+  /// - `Option<String>` - The resolved value formatted as a string if found, otherwise `None`.
   fn resolve_context_interpolation(&self, value: &str) -> Option<String> {
     // convert "." and "[" to "/" and "]" and quotes to "" to look like a json pointer
     let val: String = format!("/{}", value.replace(['.', '['], "/").replace([']', '"', '\''], ""));
@@ -125,7 +180,7 @@ mod tests {
     assert_eq!(interpolator.resolve("{{ Nested.this.that.those[2].deee.eeee }}", true), "eeep".to_string());
     assert_eq!(interpolator.resolve("{{ ArrayNested[0].a[1].aaa[0].aaaa }}", true), "123".to_string());
     assert_eq!(interpolator.resolve("{{ ArrayNested[0].a[1].aaa[0].$aaaa }}", true), "$123".to_string());
-    
+
     // Add tests with quotes for dict accesses
     context.insert(String::from("dict_with_quotes"), json!({"x-backend": "Flask", "other_key": "value"}));
     let interpolator2 = Interpolator::new(&context);

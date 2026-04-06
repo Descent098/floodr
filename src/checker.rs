@@ -1,8 +1,41 @@
+//! Compare executions of a benchmark against a previous one.
+//!
+//! Validates if the current runs are within the threshold difference
+//! of the previously recorded baseline metrics.
+
 use colored::*;
 
 use crate::actions::Report;
 use crate::reader;
 
+/// Compares the results of a benchmark run against a previous execution's baseline.
+///
+/// It iterates through each request in the reports and checks if the duration
+/// exceeds the baseline duration by more than the specified threshold.
+///
+/// # Arguments
+///
+/// - `list_reports` (`&[Vec<Report>]`) - The current benchmark results (multi-iteration).
+/// - `filepath` (`&str`) - Path to the baseline YAML report file.
+/// - `threshold` (`&str`) - The maximum allowed duration increase in milliseconds.
+///
+/// # Returns
+///
+/// - `Result<(), i32>` - `Ok(())` if all requests are within threshold, otherwise `Err(count)` where `count` is the number of slow requests.
+///
+/// # Panics
+///
+/// - Panics if the threshold string is not a valid floating point number.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use floodr::actions::Report;
+/// use floodr::checker::compare;
+/// 
+/// let reports = vec![vec![Report { name: "test".to_string(), duration: 150.0, status: 200 }]];
+/// let result = compare(&reports, "baseline.yml", "50.0");
+/// ```
 pub fn compare(list_reports: &[Vec<Report>], filepath: &str, threshold: &str) -> Result<(), i32> {
   let threshold_value = match threshold.parse::<f64>() {
     Ok(v) => v,
