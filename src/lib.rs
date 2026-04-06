@@ -9,7 +9,7 @@ pub mod config;
 pub mod expandable;
 mod interpolator;
 mod reader;
-mod tags;
+pub mod tags;
 mod writer;
 
 use crate::actions::Report;
@@ -21,62 +21,6 @@ use linked_hash_map::LinkedHashMap;
 use std::collections::HashMap;
 use std::process;
 
-/// Main entry point of the floodr application, exported for the binary caller.
-///
-/// It parses command line arguments and initiates the benchmark execution based
-/// on the provided configuration.
-///
-/// # Examples
-///
-/// ```rust,no_run
-/// use floodr;
-///
-/// fn main() {
-///     floodr::main();
-/// }
-/// ```
-pub fn main() {
-  let matches = app_args();
-  let benchmark_file = matches.value_of("benchmark").unwrap();
-  let report_path_option = matches.value_of("report");
-  let stats_option = matches.is_present("stats");
-  let compare_path_option = matches.value_of("compare");
-  let threshold_option = matches.value_of("threshold");
-  let no_check_certificate = matches.is_present("no-check-certificate");
-  let relaxed_interpolations = matches.is_present("relaxed-interpolations");
-  let quiet = matches.is_present("quiet");
-  let nanosec = matches.is_present("nanosec");
-  let timeout = matches.value_of("timeout");
-  let verbose = matches.is_present("verbose");
-  let tags_option = matches.value_of("tags");
-  let skip_tags_option = matches.value_of("skip-tags");
-  let list_tags = matches.is_present("list-tags");
-  let list_tasks = matches.is_present("list-tasks");
-
-  #[cfg(windows)]
-  let _ = control::set_virtual_terminal(true);
-
-  if list_tags {
-    tags::list_benchmark_file_tags(benchmark_file);
-    process::exit(0);
-  };
-
-  let tags = tags::Tags::new(tags_option, skip_tags_option);
-
-  if list_tasks {
-    tags::list_benchmark_file_tasks(benchmark_file, &tags);
-    process::exit(0);
-  };
-
-  let benchmark_result = benchmark::execute(benchmark_file, report_path_option, relaxed_interpolations, no_check_certificate, quiet, nanosec, timeout, verbose, &tags);
-  let list_reports = benchmark_result.reports;
-  let duration = benchmark_result.duration;
-
-  show_stats(&list_reports, stats_option, nanosec, duration);
-  compare_benchmark(&list_reports, compare_path_option, threshold_option);
-
-  process::exit(0)
-}
 
 /// Configure and parse command line arguments for the application.
 ///
@@ -86,7 +30,7 @@ pub fn main() {
 /// # Returns
 ///
 /// - `clap::ArgMatches<'a>` - The parsed command line arguments.
-fn app_args<'a>() -> clap::ArgMatches<'a> {
+pub fn app_args<'a>() -> clap::ArgMatches<'a> {
   App::new("floodr")
     .version(crate_version!())
     .about("HTTP load testing application written in Rust inspired by Ansible syntax")
