@@ -1,8 +1,8 @@
 [package]
 name = "floodr"
-version = "1.0.0"
+version = "0.10.0"
 authors = ["Ferran Basora <fcsonline@gmail.com>","Kieran Wood <kieran@canadiancoding.ca>"]
-description = "Floodr is a HTTP load testing application written in Rust inspired by Ansible syntax"
+description = "A configurable, simple rust-based HTTP load testing system"
 repository = "https://github.com/descent098/floodr"
 keywords = ["performance", "http", "ansible", "jmeter", "load-testing", "testing", "qa"]
 license = "GPL-3.0"

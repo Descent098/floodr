@@ -4,13 +4,13 @@
 
 pub mod actions;
 pub mod benchmark;
-pub mod checker;
+mod checker;
 pub mod config;
 pub mod expandable;
-pub mod interpolator;
-pub mod reader;
-pub mod tags;
-pub mod writer;
+mod interpolator;
+mod reader;
+mod tags;
+mod writer;
 
 use crate::actions::Report;
 use clap::crate_version;
@@ -90,7 +90,13 @@ fn app_args<'a>() -> clap::ArgMatches<'a> {
   App::new("floodr")
     .version(crate_version!())
     .about("HTTP load testing application written in Rust inspired by Ansible syntax")
-    .arg(Arg::with_name("benchmark").help("Sets the benchmark file").long("benchmark").short("b").required(true).takes_value(true))
+    .arg(
+      Arg::with_name("benchmark")
+        .help("Sets the benchmark file")
+        .index(1)
+        .required(false)
+        .default_value("benchmark.yaml")
+    )
     .arg(Arg::with_name("stats").short("s").long("stats").help("Shows request statistics").takes_value(false).conflicts_with("compare"))
     .arg(Arg::with_name("report").short("r").long("report").help("Sets a report file").takes_value(true).conflicts_with("compare"))
     .arg(Arg::with_name("compare").short("c").long("compare").help("Sets a compare file").takes_value(true).conflicts_with("report"))
