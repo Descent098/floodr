@@ -1,0 +1,172 @@
+- [x] Rename to Floodr to avoid name conflicts
+    - [x] Create logo
+    - [x] Add color theme
+- [ ] Modernize
+    - [x] Remove `--benchmark` flag and make it an optional position param
+    - [ ] Update dependencies
+        - [x] Update easy wins
+        - [ ] Fix incompatabilities
+            - [x] Clap v4
+            - [ ] rand 0.10
+    - [ ] CI/CD
+        - [ ] Update existing workflows
+        - [ ] Fix release workflow to automate platform builds
+            - [ ] windows
+                - [ ] windows x86
+                - [ ] windows arm
+            - [ ] Linux
+                - [ ] linux x86
+                - [ ] linux arm
+                - [ ] muscl variants (is this necessary?)
+            - [ ] MacOS
+                - [ ] darwin x86
+                - [ ] darwin arm
+        - [ ] Docs stuff (below)
+        - [x] Add templates
+            - [x] PR template
+                - [x] Confirmation of doc updates
+                    - [x] `Readme.md`
+                    - [x] doc site
+                    - [x] inline
+            - [x] Issue template
+                - [x] Bugs
+                    - [x] OS
+                    - [x] version
+                    - [x] stack trace (if applicable)
+                    - [x] Available workaround
+                    - [x] Reproduction steps
+                - [x] Feature requests
+                    - [x] Description
+                    - [x] CLI changes
+                    - [x] Library changes
+                    - [x] Are you willing (or in progress) to submit a PR?
+    - [ ] Fix exec actions
+    - [ ] Fix issues when running back-to-back tests
+    - [ ] Clean up examples
+        - [ ] swap to gotham so people don't need node to run them
+        - [ ] Add other relevant examples as I go
+    - [ ] Clean up panics 
+        - [ ] https://doc.rust-lang.org/book/ch09-03-to-panic-or-not-to-panic.html
+        - [ ] Should the system panic as much as it does?
+            - [ ] it currently panics in `assert.rs` when a panic runs, but this should probably? be an exit. I'm just not sure how to stack-unwind properly if I don't panic here, or what the implications are
+            - [ ] If the functions panic then there use as a library are much more fragile
+- [ ] User Documentation
+    - [ ] Create better documentation site
+        - [ ] Port starlight improvements from https://github.com/Descent098/components
+            - [x] Move packages
+            - [ ] Decide if it's worth having a blog on there or not
+            - [ ] Look into more starlight plugins
+                - [ ] https://github.com/Linkerin/starlight-to-pdf
+                - [ ] https://github.com/trueberryless-org/starlight-save-file-component
+        - [x] Decide on theme (after "rebrand")
+    - [ ] Document features
+        - [x] Assertions
+        - [ ] Request
+            - [ ] url
+            - [ ] Headers
+            - [ ] Method
+            - [ ] Body
+                - [ ] file
+                - [ ] hex
+                - [ ] 
+            - [ ] Assignments
+                - [ ] Assign
+                - [ ] Manually assign values with `key`, `value`
+                - [ ] Use assigned values from response (i.e. `foo.status`)
+                - [ ] Using assigned values
+            - [ ] Items
+                - [ ] Normal Items (`with_items`)
+                    - [ ] int
+                    - [ ] string
+                    - [ ] object/JSON (i.e. `with_items: [{id:5}, {id:20}]`)
+                - [ ] Range Items `with_items_range`
+                    - [ ] Start stop step
+                - [ ] Shuffle
+                - [ ] pick
+                - [ ] csv-driven `with_items_from_csv`
+                    - [ ] file_name
+                    - [ ] quote_char
+            - [ ] Exec (CURRENTLY BROKEN)
+            - [ ] Cookies
+        - [ ] Include
+        - [ ] Update `README.md` with new docs
+            - [ ] Include FAQ
+                - [ ] Modes of use (benchmark file, CLI, etc.)
+                - [ ] Include notice about name change
+    - [ ] Create pipeline to publish docs
+- [ ] Library conversion; Currently you can't really use `floodr` as a lib, this should be more open so people can program behaviour if they want to
+    - [x] Review modules to decide which should be public (in `lib.rs`)
+        - [x] actions (already public)
+            - [x] `assert.rs`
+                - [x] Public any useful structs
+                - [x] Public any useful functions
+                - [x] Finalize inline docs
+                - [x] Add user docs
+            - [x] `assign.rs`
+                - [x] Public any useful structs
+                - [x] Public any useful functions
+                - [x] Finalize inline docs
+                - [x] Add user docs
+            - [x] `delay.rs`
+                - [x] Public any useful structs
+                - [x] Public any useful functions
+                - [x] Finalize inline docs
+                - [x] Add user docs
+            - [x] `exec.rs`
+                - [x] Public any useful structs
+                - [x] Public any useful functions
+                - [x] Finalize inline docs
+                - [x] Add user docs
+            - [x] `mod.rs`
+                - [x] Public any useful structs
+                - [x] Public any useful functions
+                - [x] Finalize inline docs
+                - [x] Add user docs
+            - [x] `request.rs`
+                - [x] Public any useful structs
+                - [x] Public any useful functions
+                - [x] Finalize inline docs
+                - [x] Add user docs
+        - [x] expandable
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+        - [x] benchmark
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+        - [x] checker
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+        - [x] config
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+        - [x] interpolator
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+        - [x] reader
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+        - [x] tags
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+        - [x] writer
+            - [x] Public any useful structs
+            - [x] Public any useful functions
+            - [x] Finalize inline docs
+            - [x] Add user docs
+    - [ ] Refactor root files into `engine` and `parsing` modules
+    - [ ] Document overall usage as a library
+

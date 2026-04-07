@@ -201,7 +201,7 @@ If you want to know more about the benchmark file syntax, [read this](./SYNTAX.m
 ## Install
 
 Right now, the easiest way to get `floodr` is to go to the
-[latest release](https://github.com/fcsonline/floodr/releases/latest)
+[latest release](https://github.com/descent098/floodr/releases/latest)
 page and download the binary file for your platform.
 
 

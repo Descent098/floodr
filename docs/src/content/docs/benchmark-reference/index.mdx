@@ -127,7 +127,7 @@ fn main() {
 To run our file we would then run:
 
 ```bash
-floodr --benchmark benchmark.yaml
+floodr benchmark.yaml
 ```
 
 ## FAQ
@@ -137,13 +137,17 @@ floodr --benchmark benchmark.yaml
   No, not explicitly. The amount of time a benchmark runs for is a product of all of the other parameters. You can approximately achieve this using the following formula:
 
 
-total time $$\approx \frac{n \times (d + a)}{c}$$
+<div style="font-size-adjust: .75;">total time $$\approx \frac{z*i}{max(c-i, 1)}$$</div>
 
+- z = approximate time taken for each iteration
+  - $$z\approx s+(((n - 1)\times d) +  (n\times a))$$
 - n = Number of requests per iteration
   - Is usually the number of request actions, but remember to include every [expandable](/floodr/benchmark-reference/expandables) item as another request when calculating
-- d = delay between requests 
-  - Can be calculated if using a `rampup` value using $$d = \frac{rampup}{iterations}$$
+- d = delay between request (if a delay action(s) exists)
   - Can also set in benchmark [directly](/floodr/benchmark-reference/delay)
+- i = number of iterations
+- s = Delay at the start of each iteration
+  - Can be calculated if using a `rampup` value using $$d_{iteration} = \frac{rampup}{iterations}$$
 - a = Average time taken for request
   - An approximation of how much time it takes to actually send data to the server, and receive a response. The true value varies per request
 - c = concurrency, or the number of threads the benchmark makes available

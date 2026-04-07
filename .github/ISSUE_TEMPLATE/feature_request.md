@@ -17,3 +17,10 @@ A clear and concise description of any alternative solutions or features you've 
 
 **Additional context**
 Add any other context or screenshots about the feature request here.
+
+**Intention to PR**
+
+Are you willing to submit a pull request for this feature?
+
+- [ ] Yes
+- [ ] No

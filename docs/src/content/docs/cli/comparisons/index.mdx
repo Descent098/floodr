@@ -5,7 +5,7 @@ title: What is a Comparison? (TODO)
 
 Dump to a  report
 ```bash
-$> floodr --benchmark benchmark.yaml --report report.yml
+$> floodr --report report.yml
 Report mode: on. Ignoring concurrency and iterations properties...
 Base URL http://localhost:4896
 
@@ -16,7 +16,7 @@ Fetch route               http://localhost:4896/hello 200 OK 0ms
 Compare current run against report, with a threshold to highlight values that go over the threshold in `ms`:
 
 ```bash
-$> floodr --benchmark benchmark.yaml --compare report.yml --threshold 2
+$> floodr --compare report.yml --threshold 2
 Concurrency 2
 Iterations 10
 Rampup 0

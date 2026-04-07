@@ -28,6 +28,6 @@
 	--sl-color-black: #ffffff;
 }
 
-mjx-container svg {
-  display: inline !important;
+mjx-container[jax="SVG"] > svg {
+  display: inline-block !important;
 }
