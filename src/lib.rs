@@ -13,8 +13,7 @@ pub mod tags;
 mod writer;
 
 use crate::actions::Report;
-use clap::crate_version;
-use clap::{App, Arg};
+use clap::{Arg, ArgAction, ArgMatches, Command, crate_version};
 use colored::*;
 use hdrhistogram::Histogram;
 use linked_hash_map::LinkedHashMap;
@@ -30,34 +29,115 @@ use std::process;
 /// # Returns
 ///
 /// - `clap::ArgMatches<'a>` - The parsed command line arguments.
-pub fn app_args<'a>() -> clap::ArgMatches<'a> {
-  App::new("floodr")
+pub fn app_args() -> ArgMatches {
+  Command::new("floodr")
     .version(crate_version!())
     .about("HTTP load testing application written in Rust inspired by Ansible syntax")
     .arg(
-      Arg::with_name("benchmark")
+      Arg::new("benchmark")
         .help("Sets the benchmark file")
-        .index(1)
         .required(false)
-        .default_value("benchmark.yaml")
+        .default_value("benchmark.yaml"),
     )
-    .arg(Arg::with_name("stats").short("s").long("stats").help("Shows request statistics").takes_value(false).conflicts_with("compare"))
-    .arg(Arg::with_name("report").short("r").long("report").help("Sets a report file").takes_value(true).conflicts_with("compare"))
-    .arg(Arg::with_name("compare").short("c").long("compare").help("Sets a compare file").takes_value(true).conflicts_with("report"))
-    .arg(Arg::with_name("threshold").short("t").long("threshold").help("Sets a threshold value in ms amongst the compared file").takes_value(true).conflicts_with("report"))
-    .arg(Arg::with_name("relaxed-interpolations").long("relaxed-interpolations").help("Do not panic if an interpolation is not present. (Not recommended)").takes_value(false))
-    .arg(Arg::with_name("no-check-certificate").long("no-check-certificate").help("Disables SSL certification check. (Not recommended)").takes_value(false))
-    .arg(Arg::with_name("tags").long("tags").help("Tags to include").takes_value(true))
-    .arg(Arg::with_name("skip-tags").long("skip-tags").help("Tags to exclude").takes_value(true))
-    .arg(Arg::with_name("list-tags").long("list-tags").help("List all benchmark tags").takes_value(false).conflicts_with_all(&["tags", "skip-tags"]))
-    .arg(Arg::with_name("list-tasks").long("list-tasks").help("List benchmark tasks (executes --tags/--skip-tags filter)").takes_value(false))
-    .arg(Arg::with_name("quiet").short("q").long("quiet").help("Disables output").takes_value(false))
-    .arg(Arg::with_name("timeout").short("o").long("timeout").help("Set timeout in seconds for all requests").takes_value(true))
-    .arg(Arg::with_name("nanosec").short("n").long("nanosec").help("Shows statistics in nanoseconds").takes_value(false))
-    .arg(Arg::with_name("verbose").short("v").long("verbose").help("Toggle verbose output").takes_value(false))
+    .arg(
+      Arg::new("stats")
+        .short('s')
+        .long("stats")
+        .help("Shows request statistics")
+        .action(ArgAction::SetTrue)
+        .conflicts_with("compare"),
+    )
+    .arg(
+      Arg::new("report")
+        .short('r')
+        .long("report")
+        .help("Sets the path for a report name that can be used with compare command later (e.g. report.yml)")
+        .num_args(1)
+        .conflicts_with("compare"),
+    )
+    .arg(
+      Arg::new("compare")
+        .short('c')
+        .long("compare")
+        .help("Sets the path for a report file to compare to current run (e.g. report.yml)")
+        .num_args(1)
+        .conflicts_with("report"),
+    )
+    .arg(
+      Arg::new("threshold")
+        .short('t')
+        .long("threshold")
+        .help("Sets a threshold value in ms amongst the compared file")
+        .num_args(1)
+        .conflicts_with("report"),
+    )
+    .arg(
+      Arg::new("relaxed-interpolations")
+        .long("relaxed-interpolations")
+        .help("Do not panic if an interpolation is not present. (Not recommended)")
+        .action(ArgAction::SetTrue),
+    )
+    .arg(
+      Arg::new("no-check-certificate")
+        .long("no-check-certificate")
+        .help("Disables SSL certification check. (Not recommended)")
+        .action(ArgAction::SetTrue),
+    )
+    .arg(
+      Arg::new("tags")
+        .long("tags")
+        .help("Tags to include")
+        .num_args(1),
+    )
+    .arg(
+      Arg::new("skip-tags")
+        .long("skip-tags")
+        .help("Tags to exclude")
+        .num_args(1),
+    )
+    .arg(
+      Arg::new("list-tags")
+        .long("list-tags")
+        .help("List all benchmark tags")
+        .action(ArgAction::SetTrue)
+        .conflicts_with_all(["tags", "skip-tags"]),
+    )
+    .arg(
+      Arg::new("list-tasks")
+        .long("list-tasks")
+        .help("List benchmark tasks (executes --tags/--skip-tags filter)")
+        .action(ArgAction::SetTrue),
+    )
+    .arg(
+      Arg::new("quiet")
+        .short('q')
+        .long("quiet")
+        .help("Disables output")
+        .action(ArgAction::SetTrue),
+    )
+    .arg(
+      Arg::new("timeout")
+        .short('o')
+        .long("timeout")
+        .help("Set timeout in seconds for all requests")
+        .num_args(1),
+    )
+    .arg(
+      Arg::new("nanosec")
+        .short('n')
+        .long("nanosec")
+        .help("Shows statistics in nanoseconds")
+        .action(ArgAction::SetTrue),
+    )
+    .arg(
+      Arg::new("verbose")
+        .short('v')
+        .long("verbose")
+        .help("Toggle verbose output")
+        .action(ArgAction::SetTrue),
+    )
     .get_matches()
 }
-
 /// Holds details about the results of a floodr execution.
 ///
 /// This struct captures aggregate metrics across all requests in a benchmark.

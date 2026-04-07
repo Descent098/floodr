@@ -39,7 +39,7 @@ pub fn read_file(filepath: &str) -> String {
       Ok(file) => file,
       Err(why) => {
           let formatted_error = format!("Couldn't open {}:\n\tReason: {}", display, why).red().bold();
-          eprintln!("{}\n\nCheck the filename ({}), permissions, and try again\n\nUsage: \n\tfloodr <filename>.yml", formatted_error, filepath.to_string().cyan().bold());
+          eprintln!("{}\n\nCheck the filename ({}), permissions, and try again\n\nUsage: \n\tfloodr <filename>.yml\n\nOr get help with:\n\tfloodr --help", formatted_error, filepath.to_string().cyan().bold());
           process::exit(1)
       }
   };
@@ -48,7 +48,7 @@ pub fn read_file(filepath: &str) -> String {
   let mut content = String::new();
   if let Err(why) = file.read_to_string(&mut content) {
           let formatted_error = format!("Couldn't Read {}:\n\tReason: {}", display, why).red().bold();
-          eprintln!("{}\n\nCheck permissions, and try again\n\nUsage: \n\tfloodr <filename>.yml", formatted_error);
+          eprintln!("{}\n\nCheck permissions, and try again\n\nUsage: \n\tfloodr <filename>.yml\n\nOr get help with:\n\tfloodr --help", formatted_error);
           process::exit(1)
       }
   content

@@ -17,22 +17,23 @@ use colored::control;
 /// cargo run -- --benchmark my_test.yml
 /// ```
 fn main() {
+  // TODO: update to builder pattern to make the type conversions cleaner
   let matches = floodr::app_args();
-  let benchmark_file = matches.value_of("benchmark").unwrap();
-  let report_path_option = matches.value_of("report");
-  let stats_option = matches.is_present("stats");
-  let compare_path_option = matches.value_of("compare");
-  let threshold_option = matches.value_of("threshold");
-  let no_check_certificate = matches.is_present("no-check-certificate");
-  let relaxed_interpolations = matches.is_present("relaxed-interpolations");
-  let quiet = matches.is_present("quiet");
-  let nanosec = matches.is_present("nanosec");
-  let timeout = matches.value_of("timeout");
-  let verbose = matches.is_present("verbose");
-  let tags_option = matches.value_of("tags");
-  let skip_tags_option = matches.value_of("skip-tags");
-  let list_tags = matches.is_present("list-tags");
-  let list_tasks = matches.is_present("list-tasks");
+  let benchmark_file = matches.get_one::<String>("benchmark").unwrap().as_str();
+  let report_path_option = Some(matches.get_one::<String>("report").unwrap().as_str());
+  let stats_option = matches.contains_id("stats");
+  let compare_path_option = Some(matches.get_one::<String>("compare").unwrap().as_str());
+  let threshold_option = Some(matches.get_one::<String>("threshold").unwrap().as_str());
+  let no_check_certificate = matches.contains_id("no-check-certificate");
+  let relaxed_interpolations = matches.contains_id("relaxed-interpolations");
+  let quiet = matches.contains_id("quiet");
+  let nanosec = matches.contains_id("nanosec");
+  let timeout = Some(matches.get_one::<String>("timeout").unwrap().as_str());
+  let verbose = matches.contains_id("verbose");
+  let tags_option = Some(matches.get_one::<String>("tags").unwrap().as_str());
+  let skip_tags_option = Some(matches.get_one::<String>("skip-tags").unwrap().as_str());
+  let list_tags = matches.contains_id("list-tags");
+  let list_tasks = matches.contains_id("list-tasks");
 
   #[cfg(windows)]
   let _ = control::set_virtual_terminal(true);
