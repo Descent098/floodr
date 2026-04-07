@@ -21,9 +21,9 @@ use serde_yaml::Value;
 
 use crate::actions::Runnable;
 use crate::actions::extract;
-use crate::benchmark::{Context, Pool, Reports};
-use crate::config::Config;
-use crate::interpolator;
+use crate::engine::benchmark::{Context, Pool, Reports};
+use crate::parsing::config::Config;
+use crate::parsing::interpolator;
 
 /// Represents an assertion action in a benchmark plan. Used to verify that variables or responses match expected values.
 ///

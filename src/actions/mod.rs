@@ -109,8 +109,8 @@ pub use self::exec::Exec;
 pub use self::request::Request;
 pub use self::request::Body;
 
-use crate::benchmark::{Context, Pool, Reports};
-use crate::config::Config;
+use crate::engine::benchmark::{Context, Pool, Reports};
+use crate::parsing::config::Config;
 
 use std::fmt;
 

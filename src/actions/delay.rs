@@ -20,8 +20,8 @@ use tokio::time::sleep;
 
 use crate::actions::Runnable;
 use crate::actions::extract;
-use crate::benchmark::{Context, Pool, Reports};
-use crate::config::Config;
+use crate::engine::benchmark::{Context, Pool, Reports};
+use crate::parsing::config::Config;
 
 use std::convert::TryFrom;
 use std::time::Duration;

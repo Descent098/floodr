@@ -7,8 +7,6 @@ use serde_yaml::{Mapping, Value};
 use std::fs::File;
 use std::io::{BufReader, prelude::*};
 use std::path::Path;
-use std::process;
-use colored::*;
 
 /// Reads the entire contents of a file into a string.
 ///
@@ -36,21 +34,16 @@ pub fn read_file(filepath: &str) -> String {
 
   // Open the path in read-only mode, returns `io::Result<File>`
   let mut file = match File::open(path) {
-      Ok(file) => file,
-      Err(why) => {
-          let formatted_error = format!("Couldn't open {}:\n\tReason: {}", display, why).red().bold();
-          eprintln!("{}\n\nCheck the filename ({}), permissions, and try again\n\nUsage: \n\tfloodr <filename>.yml\n\nOr get help with:\n\tfloodr --help", formatted_error, filepath.to_string().cyan().bold());
-          process::exit(1)
-      }
+    Err(why) => panic!("couldn't open {display}: {why}"),
+    Ok(file) => file,
   };
 
   // Read the file contents into a string, returns `io::Result<usize>`
   let mut content = String::new();
   if let Err(why) = file.read_to_string(&mut content) {
-          let formatted_error = format!("Couldn't Read {}:\n\tReason: {}", display, why).red().bold();
-          eprintln!("{}\n\nCheck permissions, and try again\n\nUsage: \n\tfloodr <filename>.yml\n\nOr get help with:\n\tfloodr --help", formatted_error);
-          process::exit(1)
-      }
+    panic!("couldn't read {display}: {why}");
+  }
+
   content
 }
 

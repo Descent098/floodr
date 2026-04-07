@@ -21,10 +21,10 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use serde_yaml::{Number, Value};
 
-use crate::interpolator::INTERPOLATION_REGEX;
+use crate::parsing::interpolator::INTERPOLATION_REGEX;
 
 use crate::actions::Request;
-use crate::benchmark::Benchmark;
+use crate::engine::benchmark::Benchmark;
 
 /// Checks if the provided YAML item represents a range-expanded request action.
 ///
@@ -149,7 +149,7 @@ mod tests {
   #[test]
   fn expand_multi_range() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\nwith_items_range:\n  start: 2\n  step: 2\n  stop: 20";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -162,7 +162,7 @@ mod tests {
   #[test]
   fn expand_multi_range_should_limit_requests_using_the_pick_option() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\npick: 3\nwith_items_range:\n  start: 2\n  step: 2\n  stop: 20";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -176,7 +176,7 @@ mod tests {
   #[should_panic]
   fn invalid_expand() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\nwith_items_range:\n  start: 1\n  step: 2\n  stop: foo";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -187,7 +187,7 @@ mod tests {
   #[should_panic]
   fn runtime_expand() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\nwith_items_range:\n  start: 1\n  step: 2\n  stop: \"{{ memory }}\"";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 

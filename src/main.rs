@@ -14,7 +14,7 @@ use colored::control;
 ///
 /// ```bash
 /// # Run the application
-/// cargo run -- --benchmark my_test.yml
+/// cargo run -- <file>.yml
 /// ```
 fn main() {
   // TODO: update to builder pattern to make the type conversions cleaner
@@ -39,18 +39,18 @@ fn main() {
   let _ = control::set_virtual_terminal(true);
 
   if list_tags {
-    floodr::tags::list_benchmark_file_tags(benchmark_file);
+    floodr::parsing::tags::list_benchmark_file_tags(benchmark_file);
     process::exit(0);
   };
 
-  let tags = floodr::tags::Tags::new(tags_option, skip_tags_option);
+  let tags = floodr::parsing::tags::Tags::new(tags_option, skip_tags_option);
 
   if list_tasks {
-    floodr::tags::list_benchmark_file_tasks(benchmark_file, &tags);
+    floodr::parsing::tags::list_benchmark_file_tasks(benchmark_file, &tags);
     process::exit(0);
   };
 
-  let benchmark_result = floodr::benchmark::execute(benchmark_file, report_path_option, relaxed_interpolations, no_check_certificate, quiet, nanosec, timeout, verbose, &tags);
+  let benchmark_result = floodr::engine::benchmark::execute(benchmark_file, report_path_option, relaxed_interpolations, no_check_certificate, quiet, nanosec, timeout, verbose, &tags);
   let list_reports = benchmark_result.reports;
   let duration = benchmark_result.duration;
 

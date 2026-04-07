@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn should_return_the_configured_value() {
       let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\npick: 2\nwith_items:\n  - 1\n  - 2\n  - 3";
-      let item = &crate::reader::read_file_as_yml_from_str(text)[0];
+      let item = &crate::parsing::reader::read_file_as_yml_from_str(text)[0];
       let pick = pick(item, item.get("with_items").and_then(|v| v.as_sequence()).unwrap());
 
       assert_eq!(pick, 2);
@@ -96,7 +96,7 @@ mod tests {
     #[test]
     fn should_return_the_with_items_length_if_unset() {
       let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\nwith_items:\n  - 1\n  - 2\n  - 3";
-      let item = &crate::reader::read_file_as_yml_from_str(text)[0];
+      let item = &crate::parsing::reader::read_file_as_yml_from_str(text)[0];
       let pick = pick(item, item.get("with_items").and_then(|v| v.as_sequence()).unwrap());
 
       assert_eq!(pick, 3);
@@ -106,7 +106,7 @@ mod tests {
     #[should_panic(expected = "pick option should not be negative, but was -1")]
     fn should_panic_for_negative_values() {
       let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\npick: -1\nwith_items:\n  - 1\n  - 2\n  - 3";
-      let item = &crate::reader::read_file_as_yml_from_str(text)[0];
+      let item = &crate::parsing::reader::read_file_as_yml_from_str(text)[0];
       pick(item, item.get("with_items").and_then(|v| v.as_sequence()).unwrap());
     }
 
@@ -114,7 +114,7 @@ mod tests {
     #[should_panic(expected = "pick option should not be greater than the provided items, but was 4")]
     fn should_panic_for_values_greater_than_the_items_list() {
       let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\npick: 4\nwith_items:\n  - 1\n  - 2\n  - 3";
-      let item = &crate::reader::read_file_as_yml_from_str(text)[0];
+      let item = &crate::parsing::reader::read_file_as_yml_from_str(text)[0];
       pick(item, item.get("with_items").and_then(|v| v.as_sequence()).unwrap());
     }
   }

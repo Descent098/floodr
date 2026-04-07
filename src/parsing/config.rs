@@ -5,9 +5,9 @@
 
 use serde_yaml::Value;
 
-use crate::benchmark::Context;
-use crate::interpolator;
-use crate::reader;
+use crate::engine::benchmark::Context;
+use crate::parsing::interpolator;
+use crate::parsing::reader;
 
 const NITERATIONS: i64 = 1;
 const NRAMPUP: i64 = 0;
@@ -30,7 +30,7 @@ const NRAMPUP: i64 = 0;
 /// # Examples
 ///
 /// ```rust,no_run
-/// use floodr::config::Config;
+/// use floodr::parsing::config::Config;
 ///
 /// let config = Config::new("config.yml", false, false, false, false, 1000, false);
 /// ```

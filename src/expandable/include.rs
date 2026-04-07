@@ -14,14 +14,14 @@
 use serde_yaml::Value;
 use std::path::Path;
 
-use crate::interpolator::INTERPOLATION_REGEX;
+use crate::parsing::interpolator::INTERPOLATION_REGEX;
 
 use crate::actions;
-use crate::benchmark::Benchmark;
+use crate::engine::benchmark::Benchmark;
 use crate::expandable::{include, multi_csv_request, multi_file_request, multi_iter_request, multi_request};
-use crate::tags::Tags;
+use crate::parsing::tags::Tags;
 
-use crate::reader;
+use crate::parsing::reader;
 
 /// Checks if the provided YAML item represents an `include` action.
 ///
@@ -151,14 +151,14 @@ pub fn expand_from_filepath(parent_path: &str, benchmark: &mut Benchmark, access
 
 #[cfg(test)]
 mod tests {
-  use crate::benchmark::Benchmark;
+  use crate::engine::benchmark::Benchmark;
   use crate::expandable::include::{expand, is_that_you};
-  use crate::tags::Tags;
+  use crate::parsing::tags::Tags;
 
   #[test]
   fn expand_include() {
     let text = "---\nname: Include comment\ninclude: comments.yml";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -172,7 +172,7 @@ mod tests {
   #[should_panic]
   fn invalid_expand() {
     let text = "---\nname: Include comment\ninclude: {{ memory }}.yml";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 

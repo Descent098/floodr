@@ -18,9 +18,9 @@ use std::process::Command;
 
 use crate::actions::Runnable;
 use crate::actions::{extract, extract_optional};
-use crate::benchmark::{Context, Pool, Reports};
-use crate::config::Config;
-use crate::interpolator;
+use crate::engine::benchmark::{Context, Pool, Reports};
+use crate::parsing::config::Config;
+use crate::parsing::interpolator;
 
 /// Represents an execution action to run external commands during a benchmark.
 ///

@@ -13,10 +13,10 @@ use serde_json::{Map, Value, json};
 use tokio::{runtime, time::sleep};
 
 use crate::actions::{Report, Runnable};
-use crate::config::Config;
+use crate::parsing::config::Config;
 use crate::expandable::include;
-use crate::tags::Tags;
-use crate::writer;
+use crate::parsing::tags::Tags;
+use crate::parsing::writer;
 
 use reqwest::Client;
 
@@ -120,7 +120,7 @@ fn join<S: ToString>(l: Vec<S>, sep: &str) -> String {
 /// # Examples
 ///
 /// ```rust,ignore
-/// use floodr::tags::Tags;
+/// use floodr::parsing::tags::Tags;
 /// let result = execute("test.yml", None, false, false, false, false, Some("10"), true, &Tags::new(None, None));
 /// ```
 #[allow(clippy::too_many_arguments)]

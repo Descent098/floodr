@@ -8,7 +8,7 @@ use lazy_static::lazy_static;
 use regex::{Captures, Regex};
 use serde_json::json;
 
-use crate::benchmark::Context;
+use crate::engine::benchmark::Context;
 
 static INTERPOLATION_PREFIX: &str = "{{";
 static INTERPOLATION_SUFFIX: &str = "}}";

@@ -3,7 +3,7 @@
 //! Exposes structures and functionality to filter out or force include
 //! benchmark items based on their associated tags ( Ansible-style tags ).
 
-use crate::reader;
+use crate::parsing::reader;
 use colored::*;
 use serde_yaml::Value;
 use std::collections::HashSet;
@@ -180,7 +180,7 @@ mod tests {
   use super::*;
 
   fn str_to_yaml(text: &str) -> Value {
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     docs[0].clone()
   }
 

@@ -23,7 +23,7 @@ use std::path::Path;
 /// # Examples
 ///
 /// ```rust,ignore
-/// use floodr::writer::write_file;
+/// use floodr::parsing::writer::write_file;
 /// write_file("report.txt", "data".to_string());
 /// ```
 pub fn write_file(filepath: &str, content: String) {

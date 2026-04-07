@@ -6,7 +6,7 @@
 use colored::*;
 
 use crate::actions::Report;
-use crate::reader;
+use crate::parsing::reader;
 
 /// Compares the results of a benchmark run against a previous execution's baseline.
 ///
@@ -31,7 +31,7 @@ use crate::reader;
 ///
 /// ```rust,ignore
 /// use floodr::actions::Report;
-/// use floodr::checker::compare;
+/// use floodr::parsing::checker::compare;
 /// 
 /// let reports = vec![vec![Report { name: "test".to_string(), duration: 150.0, status: 200 }]];
 /// let result = compare(&reports, "baseline.yml", "50.0");

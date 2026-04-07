@@ -20,9 +20,9 @@ use std::path::Path;
 
 use super::pick;
 use crate::actions::Request;
-use crate::benchmark::Benchmark;
-use crate::interpolator::INTERPOLATION_REGEX;
-use crate::reader;
+use crate::engine::benchmark::Benchmark;
+use crate::parsing::interpolator::INTERPOLATION_REGEX;
+use crate::parsing::reader;
 
 /// Checks if the provided YAML item represents a CSV-expanded request action.
 ///
@@ -124,7 +124,7 @@ mod tests {
   #[test]
   fn expand_multi() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item.id }}\nwith_items_from_csv: ./fixtures/users.csv";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -137,7 +137,7 @@ mod tests {
   #[test]
   fn expand_multi_should_limit_requests_using_the_pick_option() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\npick: 2\nwith_items_from_csv: ./fixtures/users.csv";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -150,7 +150,7 @@ mod tests {
   #[test]
   fn expand_multi_should_work_with_pick_and_shuffle() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\npick: 1\nshuffle: true\nwith_items_from_csv: ./fixtures/users.csv";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -164,7 +164,7 @@ mod tests {
   #[should_panic]
   fn runtime_expand() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item.id }}\nwith_items_from_csv: ./fixtures/{{ memory }}.csv";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 

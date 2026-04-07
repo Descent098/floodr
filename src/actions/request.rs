@@ -19,9 +19,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use crate::actions::{extract, extract_optional};
-use crate::benchmark::{Context, Pool, Reports};
-use crate::config::Config;
-use crate::interpolator;
+use crate::engine::benchmark::{Context, Pool, Reports};
+use crate::parsing::config::Config;
+use crate::parsing::interpolator;
 
 use crate::actions::{Report, Runnable};
 
