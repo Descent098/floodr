@@ -1,11 +1,11 @@
 ---
-title: Asserts (TODO)
+title: Assert (TODO)
 description: Describing how to assert properties of a response
 ---
 import { Aside } from '@astrojs/starlight/components';
 import { Code } from '@astrojs/starlight/components';
 
-Asserts are useful in situations where you want to consider a particular condition as a failure. The available fields to assert against can be found in the `floodr::actions::AssignedRequest;` struct. 
+Asserts are useful in situations where you want to consider a particular condition as a failure. You can find details about available fields in the [assign section](/floodr/benchmark-refrence/assign).
 
 ## Examples
 
@@ -25,11 +25,44 @@ plan:
       key: latestRedirect.status
       value: 301`}/>
 
-<Aside type="note">You **need** to do an `assign` to assert the value, the `name` will not work</Aside>
+<Aside type="note">You **need** to do an `assign` to assert the value in later actions, the `name` will not work as a lookup</Aside>
 
 ### Assert Everything
 
-Consider the simple server below using [gotham](https://gotham.rs/):
+Consider a server that returns an HTTP response of:
+
+```http
+HTTP/1.1 200 OK
+Content-Length: 12
+Content-Type: text/plain
+Date: Sun, 05 Apr 2026 07:50:37 GMT
+X-Backend: gotham
+X-Request-Id: c762fb85-4e7e-4fd2-bf1e-d626f63b7a64
+
+Hello World!
+```
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
 
 ```rust
 use gotham::helpers::http::response::create_response;
@@ -66,26 +99,13 @@ fn main() {
 }
 ```
 
-It will return a result like this:
+</details>
 
-```http
-HTTP/1.1 200 OK
-Content-Length: 12
-Content-Type: text/plain
-Date: Sun, 05 Apr 2026 07:50:37 GMT
-X-Backend: gotham
-X-Request-Id: c762fb85-4e7e-4fd2-bf1e-d626f63b7a64
+</Aside>
 
-Hello World!
-```
+We can then test the status code, presence of headers, url, and http version using:
 
-We can then test everything:
-
-```yaml
-concurrency: 1
-base: 'http://localhost:4896'
-iterations: 2
-rampup: 1
+<Code lang="yaml" title="benchmark.yaml" code={`base: 'http://localhost:4896'
 
 plan:
   # Setup request and assign it to the name gothamServer
@@ -109,10 +129,9 @@ plan:
   - name: Assert http version
     assert:
       key: gothamServer.version
-      value: http/1.1
-```
+      value: http/1.1`}/>
 
-which will then give us:
+Which results in will then give us:
 
 ```bash
 $> floodr --stats
@@ -155,3 +174,5 @@ Sample standard deviation 157ms
 99.5'th percentile        315ms
 99.9'th percentile        315ms
 ```
+
+Keep in mind that each individual check is not expensive, but the more you assert, the more latency per-iteration. 

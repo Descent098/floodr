@@ -1,9 +1,11 @@
 ---
-title: What is an Action? (TODO)
+title: What is an Action?
+sidebar:
+  order: 1
 ---
-import { Code } from '@astrojs/starlight/components';
+import { Code, Aside } from '@astrojs/starlight/components';
 
-An individual action is basically a step that runs once per iteration. This can include making a [request](/floodr/benchmark-reference/request), [introducing a delay between actions](/floodr/benchmark-reference/delay), etc. For example with the following file:
+An individual action is basically a step that runs once per iteration. This can include making a [request](/floodr/benchmark-reference/request), [introducing a delay](/floodr/benchmark-reference/delay), etc. For example with the following file:
 
 <Code title="benchmark.yaml" lang="yaml" code={`
 base: 'http://localhost:4896'
@@ -25,16 +27,18 @@ plan:
       value: 404
 `}/>
 
-Creats 4 actions, and causes 2 HTTP requests. These actions make up a single iteration, meaning each iteration would look like this:
+Creates 4 actions, and causes 2 HTTP requests. These actions make up a single iteration, meaning each iteration would look like this:
 
 ```mermaid
 flowchart TD
-    B(("Login<br/>type: request<br/>url:'/login?user=admin&pass=test'"))
-    C(("Wait a few seconds<br/>type: delay<br/>seconds: 3"))
-    D(("Hit a non-existant page<br/>type: request<br/>url: /asdkljfhsadfkj<br/>assign: invalid"))
-    E(("Assert last request is invalid<br/>type: assert<br/>key: invalid.status<br/>value: 404"))
+    B(("Login<br/><br/>type: request<br/>url:'/login?user=admin&pass=test'"))
+    C(("Wait a few seconds<br/><br/>type: delay<br/>seconds: 3"))
+    D(("Hit a non-existant page<br/><br/>type: request<br/>url: /asdkljfhsadfkj<br/>assign: invalid"))
+    E(("Assert last request is invalid<br/><br/>type: assert<br/>key: invalid.status<br/>value: 404"))
 
     A{{iteration starts}}-->B-->C-->D-->E-->F{{iteration ends}}
 ```
 
-TODO: CREATE DIAGRAM
+<Aside type={"danger"}>
+It's important to note that actions run **sequentially**, meaning the order you define them in is relevent to their execution. This means [assignments](/floodr/benchmark-reference/assign) **must** happen before the variables are used.
+</Aside>
