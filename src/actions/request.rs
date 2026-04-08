@@ -136,6 +136,7 @@ pub struct Request {
 /// struct RequestItem {
 ///     name: String,
 ///     request: RequestItemDetails,
+///     assign: Option<String>,
 /// }
 ///
 /// let config = RequestItem {
@@ -143,6 +144,7 @@ pub struct Request {
 ///     request: RequestItemDetails {
 ///         url: "/api/account".to_string(),
 ///     },
+///     assign: Some(String::from("foo")),
 /// };
 /// let value = serde_yaml::to_value(config).unwrap();
 /// let s = Request::new(&value, None, None);
