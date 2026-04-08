@@ -2,8 +2,11 @@
 //!
 //! Defers execution to the library crate `floodr`.
 
+use floodr::engine::benchmark;
+use floodr::parsing::tags;
 use std::process;
 use colored::control;
+use clap::{crate_version, Parser};
 
 /// The main entry point calling `floodr::main()`.
 ///
@@ -16,46 +19,120 @@ use colored::control;
 /// # Run the application
 /// cargo run -- <file>.yml
 /// ```
-fn main() {
-  // TODO: update to builder pattern to make the type conversions cleaner
-  let matches = floodr::app_args();
-  let benchmark_file = matches.get_one::<String>("benchmark").unwrap().as_str();
-  let report_path_option = Some(matches.get_one::<String>("report").unwrap().as_str());
-  let stats_option = matches.contains_id("stats");
-  let compare_path_option = Some(matches.get_one::<String>("compare").unwrap().as_str());
-  let threshold_option = Some(matches.get_one::<String>("threshold").unwrap().as_str());
-  let no_check_certificate = matches.contains_id("no-check-certificate");
-  let relaxed_interpolations = matches.contains_id("relaxed-interpolations");
-  let quiet = matches.contains_id("quiet");
-  let nanosec = matches.contains_id("nanosec");
-  let timeout = Some(matches.get_one::<String>("timeout").unwrap().as_str());
-  let verbose = matches.contains_id("verbose");
-  let tags_option = Some(matches.get_one::<String>("tags").unwrap().as_str());
-  let skip_tags_option = Some(matches.get_one::<String>("skip-tags").unwrap().as_str());
-  let list_tags = matches.contains_id("list-tags");
-  let list_tasks = matches.contains_id("list-tasks");
+#[derive(Parser, Debug)]
+#[command(
+  name = "drill",
+  version = crate_version!(),
+  about = "A configurable, simple rust-based HTTP load testing system",
+  long_about = None,
+)]
+struct Cli {
+  /// Benchmark file to run
+  #[arg(default_value = "benchmark.yaml")]
+  benchmark: String,
 
-  #[cfg(windows)]
-  let _ = control::set_virtual_terminal(true);
+  /// Shows request statistics
+  #[arg(short = 's', long = "stats", conflicts_with = "compare")]
+  stats: bool,
 
-  if list_tags {
-    floodr::parsing::tags::list_benchmark_file_tags(benchmark_file);
-    process::exit(0);
-  };
+  /// Sets a report file
+  #[arg(short = 'r', long = "report", conflicts_with = "compare")]
+  report: Option<String>,
 
-  let tags = floodr::parsing::tags::Tags::new(tags_option, skip_tags_option);
+  /// Sets a compare file
+  #[arg(short = 'c', long = "compare", conflicts_with = "report")]
+  compare: Option<String>,
 
-  if list_tasks {
-    floodr::parsing::tags::list_benchmark_file_tasks(benchmark_file, &tags);
-    process::exit(0);
-  };
+  /// Sets a threshold value in ms amongst the compared file
+  #[arg(short = 't', long = "threshold", conflicts_with = "report", requires = "compare")]
+  threshold: Option<String>,
 
-  let benchmark_result = floodr::engine::benchmark::execute(benchmark_file, report_path_option, relaxed_interpolations, no_check_certificate, quiet, nanosec, timeout, verbose, &tags);
-  let list_reports = benchmark_result.reports;
-  let duration = benchmark_result.duration;
+  /// Do not panic if an interpolation is not present. (Not recommended)
+  #[arg(long = "relaxed-interpolations")]
+  relaxed_interpolations: bool,
 
-  floodr::show_stats(&list_reports, stats_option, nanosec, duration);
-  floodr::compare_benchmark(&list_reports, compare_path_option, threshold_option);
+  /// Disables SSL certification check. (Not recommended)
+  #[arg(long = "no-check-certificate")]
+  no_check_certificate: bool,
 
-  process::exit(0)
+  /// Tags to include
+  #[arg(long = "tags")]
+  tags: Option<String>,
+
+  /// Tags to exclude
+  #[arg(long = "skip-tags")]
+  skip_tags: Option<String>,
+
+  /// List all benchmark tags
+  #[arg(long = "list-tags", conflicts_with_all = ["tags", "skip_tags"])]
+  list_tags: bool,
+
+  /// List benchmark tasks (executes --tags/--skip-tags filter)
+  #[arg(long = "list-tasks")]
+  list_tasks: bool,
+
+  /// Disables output
+  #[arg(short = 'q', long = "quiet")]
+  quiet: bool,
+
+  /// Set timeout in seconds for all requests
+  #[arg(short = 'o', long = "timeout")]
+  timeout: Option<String>,
+
+  /// Shows statistics in nanoseconds
+  #[arg(short = 'n', long = "nanosec")]
+  nanosec: bool,
+
+  /// Toggle verbose output
+  #[arg(short = 'v', long = "verbose")]
+  verbose: bool,
 }
+
+impl Cli {
+  fn run(self) -> process::ExitCode {
+
+    #[cfg(windows)]
+    let _ = control::set_virtual_terminal(true);
+
+    if self.list_tags {
+      tags::list_benchmark_file_tags(&self.benchmark);
+      process::exit(0);
+    }
+
+    let tags = tags::Tags::new(self.tags.as_deref(), self.skip_tags.as_deref());
+
+    if self.list_tasks {
+      tags::list_benchmark_file_tasks(&self.benchmark, &tags);
+      process::exit(0);
+    }
+
+    let benchmark_result = benchmark::execute(
+      &self.benchmark,
+      self.report.as_deref(),
+      self.relaxed_interpolations,
+      self.no_check_certificate,
+      self.quiet,
+      self.nanosec,
+      self.timeout.as_deref(),
+      self.verbose,
+      &tags,
+    );
+
+    let list_reports = benchmark_result.reports;
+    let duration = benchmark_result.duration;
+
+    floodr::show_stats(&list_reports, self.stats, self.nanosec, duration);
+    floodr::compare_benchmark(
+      &list_reports,
+      self.compare.as_deref(),
+      self.threshold.as_deref(),
+    );
+
+    return process::ExitCode::SUCCESS;
+  }
+}
+
+fn main() -> process::ExitCode {
+  return Cli::parse().run();
+}
+

@@ -84,6 +84,7 @@ pub enum Body {
 /// struct RequestItem {
 ///     name: String,
 ///     request: RequestItemDetails,
+///     assign: Option<String>,
 /// }
 ///
 /// let config = RequestItem {
@@ -91,6 +92,7 @@ pub enum Body {
 ///     request: RequestItemDetails {
 ///         url: "/api/account".to_string(),
 ///     },
+///     assign: Some(String::from("foo")),
 /// };
 /// let value = serde_yaml::to_value(config).unwrap();
 /// let s = Request::new(&value, None, None);
@@ -184,6 +186,7 @@ impl Request {
   /// struct RequestItem {
   ///     name: String,
   ///     request: RequestItemDetails,
+  ///     assign: Option<String>,
   /// }
   ///
   /// let config = RequestItem {
@@ -191,6 +194,7 @@ impl Request {
   ///     request: RequestItemDetails {
   ///         url: "/api/account".to_string(),
   ///     },
+  ///     assign: Some(String::from("foo")),
   /// };
   /// let value = serde_yaml::to_value(config).unwrap();
   /// let s = Request::is_that_you(&value);
@@ -226,6 +230,7 @@ impl Request {
   /// struct RequestItem {
   ///     name: String,
   ///     request: RequestItemDetails,
+  ///     assign: Option<String>,
   /// }
   ///
   /// let config = RequestItem {
@@ -233,6 +238,7 @@ impl Request {
   ///     request: RequestItemDetails {
   ///         url: "/api/account".to_string(),
   ///     },
+  ///     assign: Some(String::from("foo")),
   /// };
   /// let value = serde_yaml::to_value(config).unwrap();
   /// let s = Request::new(&value, None, None);
@@ -352,6 +358,7 @@ impl Request {
   /// struct RequestItem {
   ///     name: String,
   ///     request: RequestItemDetails,
+  ///     assign: Option<String>,
   /// }
   ///
   /// let config = RequestItem {
@@ -359,6 +366,7 @@ impl Request {
   ///     request: RequestItemDetails {
   ///         url: "/api/account".to_string(),
   ///     },
+  ///     assign: Some(String::from("foo")),
   /// };
   /// let value = serde_yaml::to_value(config).unwrap();
   /// let s = Request::new(&value, None, None);
@@ -521,6 +529,7 @@ impl Request {
 /// struct RequestItem {
 ///     name: String,
 ///     request: RequestItemDetails,
+///     assign: Option<String>,
 /// }
 ///
 /// let config = RequestItem {
@@ -528,6 +537,7 @@ impl Request {
 ///     request: RequestItemDetails {
 ///         url: "/api/account".to_string(),
 ///     },
+///     assign: Some(String::from("foo")),
 /// };
 /// let value = serde_yaml::to_value(config).unwrap();
 /// let s = Request::new(&value, None, None);
