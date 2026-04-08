@@ -7,8 +7,8 @@ prev:
   link: /floodr/getting-started/basic-usage
   label: Basic Usage
 ---
-import { Aside } from '@astrojs/starlight/components';
-import { Code } from '@astrojs/starlight/components';
+import { Aside, Code, Card } from '@astrojs/starlight/components';
+import RuntimeCalc from "../../../components/runtime-calc.svelte"
 
 This section will outline the options available when creating your benchmark file.
 
@@ -199,23 +199,30 @@ flowchart TD
 </details>
 <details>
   <summary>Can I set a test to run for a set time period?</summary>
-  No, not explicitly. The amount of time a benchmark runs for is a product of all of the other parameters. You can approximately achieve this using the following formula:
+  No, not explicitly. The amount of time a benchmark runs for is a product of all of the other parameters. Below is a calculator to help work it out:
+
+<Card>
+<RuntimeCalc client:load/>
+</Card>
+  
+  
+  You can approximately achieve this using the following formula:
 
 
-<div style="font-size-adjust: .75;">total time $$\approx \frac{z*i}{max(c-i, 1)}$$</div>
+<div style="font-size-adjust: .75;">total time $$\approx \frac{z*i}{c-i}$$</div>
 
 - z = approximate time taken for each iteration
   - $$z\approx s+(((n - 1)\times d) +  (n\times a))$$
 - n = Number of requests per iteration
   - Is usually the number of request actions, but remember to include every [expandable](/floodr/benchmark-reference/expandables) item as another request when calculating
 - d = delay between request (if a delay action(s) exists)
-  - Can also set in benchmark [directly](/floodr/benchmark-reference/delay)
-- i = number of iterations
+  - Can also set in benchmark [directly](/floodr/benchmark-reference/actions/delay)
+- i = number of iterations i$$\geq 1$$
 - s = Delay at the start of each iteration
-  - Can be calculated if using a `rampup` value using $$d_{iteration} = \frac{rampup}{iterations}$$
+  - Can be calculated if using a `rampup` value using $$d_{iteration} = \frac{rampup}{i}$$
 - a = Average time taken for request
   - An approximation of how much time it takes to actually send data to the server, and receive a response. The true value varies per request
-- c = concurrency, or the number of threads the benchmark makes available
+- c = concurrency, or the number of threads the benchmark makes available c$$\leq$$i
 
 
 </details>

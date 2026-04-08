@@ -2,10 +2,9 @@
 title: Assert (TODO)
 description: Describing how to assert properties of a response
 ---
-import { Aside } from '@astrojs/starlight/components';
-import { Code } from '@astrojs/starlight/components';
+import { Aside, Code } from '@astrojs/starlight/components';
 
-Asserts are useful in situations where you want to consider a particular condition as a failure. You can find details about available fields in the [assign section](/floodr/benchmark-refrence/assign).
+Asserts are useful in situations where you want to consider a particular condition as a failure. You can find details about available fields in the [assign section](/floodr/benchmark-reference/actions/requests/#assignment).
 
 ## Examples
 
@@ -23,7 +22,7 @@ plan:
   - name: Assert request response code
     assert:
       key: latestRedirect.status
-      value: 301`}/>
+      value: 200 # The status is set to the LAST code (which is the 200 when /api/v3 finishes)`}/>
 
 <Aside type="note">You **need** to do an `assign` to assert the value in later actions, the `name` will not work as a lookup</Aside>
 

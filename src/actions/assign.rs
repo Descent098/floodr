@@ -12,7 +12,7 @@
 //!   - name: Assert request response code
 //!     assert:
 //!       key: latestRedirect.status
-//!       value: 301
+//!       value: 200 # The status is set to the LAST code (which is the 200 when /api/v3 finishes)
 //! ```
 
 use async_trait::async_trait;
