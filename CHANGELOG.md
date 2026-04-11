@@ -20,6 +20,9 @@ The first release of floodr after converting it from drill. The focus for this r
     - Split files in the root of the `src` folder to two modules
         - `engine`: Files that drive and coreograph the execution of a benchmark
         - `parsing`: I/O and various parsing utilities to help parse YAML, csv's and handle interpolation
+- **Breaking change** Removed `-o` short flag
+- **Breaking Change** Changed `--timeout` to `--request-timeout`
+- **Breaking change** Removed `--nanosec` and `-n` flags for "nanosecond" precision. Rust doesn't actually guarentee this (since many OS's don't), it's usually off by a few hundred even though it lets you scope to that resolution. So, just removing it since it can give inaccurate info
 - Added ability to `assert` against the request URL and Http version
 - Removed OpenSSL system-level dependency
 

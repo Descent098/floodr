@@ -108,7 +108,6 @@ fn join<S: ToString>(l: Vec<S>, sep: &str) -> String {
 /// - `relaxed_interpolations` (`bool`) - If true, missing variables won't cause a panic.
 /// - `no_check_certificate` (`bool`) - If true, SSL certificate validation is disabled.
 /// - `quiet` (`bool`) - If true, minimizes console output.
-/// - `nanosec` (`bool`) - If true, outputs durations in nanoseconds.
 /// - `timeout` (`Option<&str>`) - Optional global request timeout in seconds.
 /// - `verbose` (`bool`) - If true, enables detailed logging.
 /// - `tags` (`&Tags`) - Tag filter for selecting which actions to include/skip.
@@ -124,8 +123,8 @@ fn join<S: ToString>(l: Vec<S>, sep: &str) -> String {
 /// let result = execute("test.yml", None, false, false, false, false, Some("10"), true, &Tags::new(None, None));
 /// ```
 #[allow(clippy::too_many_arguments)]
-pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, nanosec: bool, timeout: Option<&str>, verbose: bool, tags: &Tags) -> BenchmarkResult {
-  let config = Arc::new(Config::new(benchmark_path, relaxed_interpolations, no_check_certificate, quiet, nanosec, timeout.map_or(10, |t| t.parse().unwrap_or(10)), verbose));
+pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: Option<&str>, verbose: bool, tags: &Tags) -> BenchmarkResult {
+  let config = Arc::new(Config::new(benchmark_path, relaxed_interpolations, no_check_certificate, quiet, timeout.map_or(10, |t| t.parse().unwrap_or(10)), verbose));
 
   if report_path_option.is_some() {
     println!("{}: {}. Ignoring {} and {} properties...", "Report mode".yellow(), "on".purple(), "concurrency".yellow(), "iterations".yellow());

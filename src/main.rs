@@ -75,13 +75,9 @@ struct Cli {
   #[arg(short = 'q', long = "quiet")]
   quiet: bool,
 
-  /// Set timeout in seconds for all requests
-  #[arg(short = 'o', long = "timeout")]
-  timeout: Option<String>,
-
-  /// Shows statistics in nanoseconds
-  #[arg(short = 'n', long = "nanosec")]
-  nanosec: bool,
+  /// Set timeout in seconds for a request
+  #[arg(long = "request-timeout")]
+  request_timeout: Option<String>,
 
   /// Toggle verbose output
   #[arg(short = 'v', long = "verbose")]
@@ -112,8 +108,7 @@ impl Cli {
       self.relaxed_interpolations,
       self.no_check_certificate,
       self.quiet,
-      self.nanosec,
-      self.timeout.as_deref(),
+      self.request_timeout.as_deref(),
       self.verbose,
       &tags,
     );
@@ -121,7 +116,7 @@ impl Cli {
     let list_reports = benchmark_result.reports;
     let duration = benchmark_result.duration;
 
-    floodr::show_stats(&list_reports, self.stats, self.nanosec, duration);
+    floodr::show_stats(&list_reports, self.stats, duration);
     floodr::compare_benchmark(
       &list_reports,
       self.compare.as_deref(),

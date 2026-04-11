@@ -302,25 +302,6 @@ impl Request {
     }
   }
 
-  /// Formats a duration into standard readable text.
-  ///
-  /// # Arguments
-  ///
-  /// - `tdiff` (`f64`) - The duration to format
-  /// - `nanosec` (`bool`) - Whether to format the duration in nanoseconds
-  ///
-  /// # Returns
-  ///
-  /// - `String` - The formatted duration
-  ///
-  fn format_time(tdiff: f64, nanosec: bool) -> String {
-    if nanosec {
-      (1_000_000.0 * tdiff).round().to_string() + "ns"
-    } else {
-      tdiff.round().to_string() + "ms"
-    }
-  }
-
   /// Sends the configured HTTP request asynchronously.
   ///
   /// # Arguments
@@ -485,7 +466,7 @@ impl Request {
             status.to_string().yellow()
           };
 
-          println!("{:width$} {} {} {}", interpolated_name.green(), interpolated_base_url.blue().bold(), status_text, Request::format_time(duration_ms, config.nanosec).cyan(), width = 25);
+          println!("{:width$} {} {} {}", interpolated_name.green(), interpolated_base_url.blue().bold(), status_text, (duration_ms.round().to_string() + "ms").cyan(), width = 25);
         }
 
         (Some(response), duration_ms)

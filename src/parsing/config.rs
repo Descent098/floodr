@@ -23,7 +23,6 @@ const NRAMPUP: i64 = 0;
 /// - `no_check_certificate` (`bool`) - Whether to skip certificate checking
 /// - `rampup` (`i64`) - The rampup time for the benchmark
 /// - `quiet` (`bool`) - Whether to run the benchmark in quiet mode
-/// - `nanosec` (`bool`) - Whether to use nanosecond precision for timing
 /// - `timeout` (`u64`) - The timeout for the benchmark
 /// - `verbose` (`bool`) - Whether to run the benchmark in verbose mode
 ///
@@ -32,7 +31,7 @@ const NRAMPUP: i64 = 0;
 /// ```rust,no_run
 /// use floodr::parsing::config::Config;
 ///
-/// let config = Config::new("config.yml", false, false, false, false, 1000, false);
+/// let config = Config::new("config.yml", false, false, false, 1000, false);
 /// ```
 pub struct Config {
   pub base: String,
@@ -42,7 +41,6 @@ pub struct Config {
   pub no_check_certificate: bool,
   pub rampup: i64,
   pub quiet: bool,
-  pub nanosec: bool,
   pub timeout: u64,
   pub verbose: bool,
 }
@@ -59,7 +57,6 @@ impl Config {
   /// - `relaxed_interpolations` (`bool`) - Whether missing interpolations cause panics.
   /// - `no_check_certificate` (`bool`) - Whether to disable SSL certificate checks.
   /// - `quiet` (`bool`) - Whether to minimize output.
-  /// - `nanosec` (`bool`) - Whether to use nanosecond timing.
   /// - `timeout` (`u64`) - Request timeout in seconds.
   /// - `verbose` (`bool`) - Whether to enable verbose logging.
   ///
@@ -74,9 +71,9 @@ impl Config {
   /// # Examples
   ///
   /// ```rust,ignore
-  /// let config = Config::new("test.yml", false, false, false, false, 10, true);
+  /// let config = Config::new("test.yml", false, false, false, 10, true);
   /// ```
-  pub fn new(path: &str, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, nanosec: bool, timeout: u64, verbose: bool) -> Config {
+  pub fn new(path: &str, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool,  timeout: u64, verbose: bool) -> Config {
     let config_docs = reader::read_file_as_yml(path);
     let config_doc = &config_docs[0];
 
@@ -100,7 +97,6 @@ impl Config {
       no_check_certificate,
       rampup,
       quiet,
-      nanosec,
       timeout,
       verbose,
     }
