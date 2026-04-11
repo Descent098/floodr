@@ -25,6 +25,9 @@ The first release of floodr after converting it from drill. The focus for this r
 - **Breaking change** Removed `--nanosec` and `-n` flags for "nanosecond" precision. Rust doesn't actually guarentee this (since many OS's don't), it's usually off by a few hundred even though it lets you scope to that resolution. So, just removing it since it can give inaccurate info
 - Added ability to `assert` against the request URL and Http version
 - Removed OpenSSL system-level dependency
+- Made exec acitons cross platform
+    - Actions now run with `bash` by default on \*nix, `zsh` on macOS and `powershell` on windows. Each will use `-c` with the passed in command as a string, and fail when command returns error status
+    - Added new `--exec-terminal` flag to allow running commands with specified terminal (note `-c "<exec command>"` is passed, make sure your terminal supports this)
 
 ## Docs
 
@@ -40,6 +43,7 @@ The first release of floodr after converting it from drill. The focus for this r
 
 - Fixed panic when any request exceeds 3.6 seconds (now panics if request exceeds 1 hour)
 - Fixed bug when accessing headers in assertions
+- Fixed bug when using an exec action on machine without `bash` present
 
 ## Chores
 

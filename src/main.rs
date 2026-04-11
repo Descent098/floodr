@@ -82,6 +82,10 @@ struct Cli {
   /// Toggle verbose output
   #[arg(short = 'v', long = "verbose")]
   verbose: bool,
+
+  /// Set the terminal to run exec commands with
+  #[arg(long = "exec-terminal")]
+  exec_terminal: Option<String>,
 }
 
 impl Cli {
@@ -110,6 +114,7 @@ impl Cli {
       self.quiet,
       self.request_timeout.as_deref(),
       self.verbose,
+      self.exec_terminal.as_deref(),
       &tags,
     );
 

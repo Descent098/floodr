@@ -40,7 +40,7 @@
                     - [x] CLI changes
                     - [x] Library changes
                     - [x] Are you willing (or in progress) to submit a PR?
-    - [ ] Fix exec actions
+    - [x] Fix exec actions
     - [ ] Fix issues when running back-to-back tests
     - [ ] Clean up examples
         - [ ] swap to gotham so people don't need node to run them
@@ -99,8 +99,9 @@
                 - [ ] Modes of use (benchmark file, CLI, etc.)
                 - [ ] Include notice about name change
     - [ ] Create pipeline to publish docs
-        - [ ] Build astro site
-        - [ ] Build cargo site and move under `/api-reference`
+        - [x] Build astro site
+        - [x] Build cargo site and move under `/api-reference`
+        - [ ] Confirm it works. I have to wait until I merge the branch into `main` since I apparently can't run my branches until then
 - [ ] Library conversion; Currently you can't really use `floodr` as a lib, this should be more open so people can program behaviour if they want to
     - [x] Review modules to decide which should be public (in `lib.rs`)
         - [x] actions (already public)

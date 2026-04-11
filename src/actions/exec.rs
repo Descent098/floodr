@@ -180,7 +180,17 @@ impl Runnable for Exec {
 
     let final_command = interpolator::Interpolator::new(context).resolve(&self.command, !config.relaxed_interpolations);
 
-    let args = ["bash", "-c", "--", final_command.as_str()];
+    let default_terminal = if cfg!(target_os = "windows") {
+      "powershell"
+    } else if cfg!(target_os = "macos") {
+      "zsh"
+    } else {
+      "bash"
+    };
+
+    let terminal = config.exec_terminal.as_deref().unwrap_or(default_terminal);
+
+    let args = [terminal, "-c", final_command.as_str()];
 
     let execution = Command::new(args[0]).args(&args[1..]).output().expect("Couldn't run it");
 

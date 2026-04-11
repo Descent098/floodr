@@ -120,11 +120,11 @@ fn join<S: ToString>(l: Vec<S>, sep: &str) -> String {
 ///
 /// ```rust,ignore
 /// use floodr::parsing::tags::Tags;
-/// let result = execute("test.yml", None, false, false, false, false, Some("10"), true, &Tags::new(None, None));
+/// let result = execute("test.yml", None, false, false, false, false, Some("10"), true, None, &Tags::new(None, None));
 /// ```
 #[allow(clippy::too_many_arguments)]
-pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: Option<&str>, verbose: bool, tags: &Tags) -> BenchmarkResult {
-  let config = Arc::new(Config::new(benchmark_path, relaxed_interpolations, no_check_certificate, quiet, timeout.map_or(10, |t| t.parse().unwrap_or(10)), verbose));
+pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: Option<&str>, verbose: bool, exec_terminal: Option<&str>, tags: &Tags) -> BenchmarkResult {
+  let config = Arc::new(Config::new(benchmark_path, relaxed_interpolations, no_check_certificate, quiet, timeout.map_or(10, |t| t.parse().unwrap_or(10)), verbose, exec_terminal.map(String::from)));
 
   if report_path_option.is_some() {
     println!("{}: {}. Ignoring {} and {} properties...", "Report mode".yellow(), "on".purple(), "concurrency".yellow(), "iterations".yellow());
