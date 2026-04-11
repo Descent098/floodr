@@ -42,7 +42,7 @@ export default defineConfig({
                         label: "CLI", 
                         href: "/floodr/cli" 
                     },
-                    // { label: "Library", href: "/floodr/utilities" }, // TODO: Add crate URL when it's available
+                    { label: "API reference", href: "/floodr/api-ref/floodr/" },
                 ],
             }),
             // Enables swiping in the menu from the side on moble

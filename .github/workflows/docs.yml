@@ -1,0 +1,46 @@
+name: Build and Deploy Documentation
+
+on:
+  # Trigger the workflow every time you push to the `main` branch
+  # Using a different branch name? Replace `main` with your branch’s name
+  push:
+    branches: [main]
+  # Allows you to run this workflow manually from the Actions tab on GitHub.
+  workflow_dispatch:
+
+# Allow this job to clone the repo and create a page deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Get code and prep container for build
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - uses: moonrepo/setup-rust@v1
+      # Build docs
+      - run: cd docs && bun i && bun run build && cd ..
+      - run: cargo doc --no-deps --release
+      # Reformat final artifact for upload
+      - run: mv docs/dist documentation-build
+      - run: mv target/doc documentation-build/api-ref
+      # Upload artifact for gh-pages
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: documentation-build/
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
