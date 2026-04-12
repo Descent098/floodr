@@ -24,7 +24,7 @@ use serde_yaml::{Number, Value};
 use crate::parsing::interpolator::INTERPOLATION_REGEX;
 
 use crate::actions::Request;
-use crate::engine::benchmark::Benchmark;
+use crate::engine::benchmark::{ActionItem, Benchmark};
 
 /// Checks if the provided YAML item represents a range-expanded request action.
 ///
@@ -136,7 +136,14 @@ pub fn expand(item: &Value, benchmark: &mut Benchmark) {
       for (index, value) in with_items.iter().enumerate() {
         let index = index as u32;
 
-        benchmark.push(Box::new(Request::new(item, Some(Value::Number(Number::from(*value))), Some(index))));
+        let mut source = item.clone();
+        if let Some(map) = source.as_mapping_mut() {
+          map.insert(Value::String("with_item".into()), Value::Number(Number::from(*value)));
+          map.insert(Value::String("index".into()), Value::Number(Number::from(index)));
+          map.remove(&Value::String("with_items_range".into()));
+        }
+
+        benchmark.push(ActionItem::new(Box::new(Request::new(item, Some(Value::Number(Number::from(*value))), Some(index))), source));
       }
     }
   }

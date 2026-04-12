@@ -59,7 +59,7 @@ pub fn compare(list_reports: &[Vec<Report>], filepath: &str, threshold: &str) ->
 
   let docs = reader::read_file_as_yml(filepath);
   let doc = &docs[0];
-  let items = doc.get("reports").and_then(|v| v.as_sequence()).unwrap_or_else(|| panic!("Report file '{filepath}' does not contain a 'reports' sequence"));
+  let items = doc.get("baseline").and_then(|v| v.as_sequence()).unwrap_or_else(|| panic!("Report file '{filepath}' does not contain a 'baseline' sequence"));
   let mut slow_counter = 0;
 
   println!();

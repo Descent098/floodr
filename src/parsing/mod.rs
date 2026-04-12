@@ -9,3 +9,4 @@ pub mod interpolator;
 pub mod reader;
 pub mod tags;
 pub mod writer;
+pub mod comparisson_loader;

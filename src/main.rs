@@ -2,11 +2,11 @@
 //!
 //! Defers execution to the library crate `floodr`.
 
+use clap::{Parser, Subcommand, crate_version};
+use colored::control;
 use floodr::engine::benchmark;
 use floodr::parsing::tags;
 use std::process;
-use colored::control;
-use clap::{crate_version, Parser, Subcommand};
 
 /// The main entry point calling `floodr::main()`.
 ///
@@ -97,7 +97,6 @@ enum Commands {
 
 impl Cli {
   fn run(self) -> process::ExitCode {
-
     #[cfg(windows)]
     let _ = control::set_virtual_terminal(true);
 
@@ -114,29 +113,37 @@ impl Cli {
     }
 
     let mut base_override = None;
-    if let Some(Commands::Compare { ref report_file, .. }) = self.command {
-        base_override = Some(floodr::parsing::checker::get_base(report_file));
+    if let Some(Commands::Compare {
+      ref report_file,
+      ..
+    }) = self.command
+    {
+      base_override = Some(floodr::parsing::checker::get_base(report_file));
     }
 
-    let benchmark_result = benchmark::execute(
-      &self.benchmark,
-      self.report.as_deref(),
-      self.relaxed_interpolations,
-      self.no_check_certificate,
-      self.quiet,
-      self.request_timeout.as_deref(),
-      self.verbose,
-      self.exec_terminal.as_deref(),
-      &tags,
-      base_override,
-    );
+    let benchmark_result = if let Some(Commands::Compare {
+      ref report_file,
+      ..
+    }) = self.command
+    {
+      let (base, plan_items, _) = floodr::parsing::comparisson_loader::load_report_data(report_file);
+      let benchmark_plan = floodr::parsing::comparisson_loader::load_from_items(plan_items);
+
+      benchmark::execute_from_plan(benchmark_plan, base, self.relaxed_interpolations, self.no_check_certificate, self.quiet, self.request_timeout.as_deref().map_or(10, |t| t.parse().unwrap_or(10)), self.verbose, self.exec_terminal.clone())
+    } else {
+      benchmark::execute(&self.benchmark, self.report.as_deref(), self.relaxed_interpolations, self.no_check_certificate, self.quiet, self.request_timeout.as_deref(), self.verbose, self.exec_terminal.as_deref(), &tags, base_override)
+    };
 
     let list_reports = benchmark_result.reports;
     let duration = benchmark_result.duration;
 
     floodr::show_stats(&list_reports, self.stats, duration);
 
-    if let Some(Commands::Compare { report_file, threshold }) = self.command {
+    if let Some(Commands::Compare {
+      report_file,
+      threshold,
+    }) = self.command
+    {
       floodr::compare_benchmark(&list_reports, Some(&report_file), Some(&threshold));
     }
 
@@ -147,4 +154,3 @@ impl Cli {
 fn main() -> process::ExitCode {
   return Cli::parse().run();
 }
-

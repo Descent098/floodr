@@ -17,7 +17,7 @@ use std::path::Path;
 use crate::parsing::interpolator::INTERPOLATION_REGEX;
 
 use crate::actions;
-use crate::engine::benchmark::Benchmark;
+use crate::engine::benchmark::{ActionItem, Benchmark};
 use crate::expandable::{include, multi_csv_request, multi_file_request, multi_iter_request, multi_request};
 use crate::parsing::tags::Tags;
 
@@ -133,15 +133,15 @@ pub fn expand_from_filepath(parent_path: &str, benchmark: &mut Benchmark, access
     } else if multi_file_request::is_that_you(item) {
       multi_file_request::expand(parent_path, item, benchmark);
     } else if actions::Delay::is_that_you(item) {
-      benchmark.push(Box::new(actions::Delay::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Delay::new(item, None)), item.clone()));
     } else if actions::Exec::is_that_you(item) {
-      benchmark.push(Box::new(actions::Exec::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Exec::new(item, None)), item.clone()));
     } else if actions::Assign::is_that_you(item) {
-      benchmark.push(Box::new(actions::Assign::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Assign::new(item, None)), item.clone()));
     } else if actions::Assert::is_that_you(item) {
-      benchmark.push(Box::new(actions::Assert::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Assert::new(item, None)), item.clone()));
     } else if actions::Request::is_that_you(item) {
-      benchmark.push(Box::new(actions::Request::new(item, None, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Request::new(item, None, None)), item.clone()));
     } else {
       let out_str = serde_yaml::to_string(item).unwrap();
       panic!("Unknown node:\n\n{out_str}\n\n");

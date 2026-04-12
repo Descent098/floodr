@@ -22,8 +22,21 @@ use reqwest::Client;
 
 use colored::*;
 
+/// Represents a single action item in a benchmark plan, storing both the
+/// runnable logic and the source YAML node used to create it.
+pub struct ActionItem {
+  pub runnable: Box<dyn Runnable + Sync + Send>,
+  pub source: serde_yaml::Value,
+}
+
+impl ActionItem {
+  pub fn new(runnable: Box<dyn Runnable + Sync + Send>, source: serde_yaml::Value) -> Self {
+    Self { runnable, source }
+  }
+}
+
 /// Type alias for the runnable actions that make up a benchmark run
-pub type Benchmark = Vec<Box<dyn Runnable + Sync + Send>>;
+pub type Benchmark = Vec<ActionItem>;
 /// Type alias for the benchmark execution context, storing variables and state.
 pub type Context = Map<String, Value>;
 /// Type alias for a collection of reports from a single iteration.
@@ -72,7 +85,7 @@ async fn run_iteration(benchmark: Arc<Benchmark>, pool: Pool, config: Arc<Config
   context.insert("base".to_string(), json!(config.base.to_string()));
 
   for item in benchmark.iter() {
-    item.execute(&mut context, &mut reports, &pool, &config).await;
+    item.runnable.execute(&mut context, &mut reports, &pool, &config).await;
   }
 
   reports
@@ -143,7 +156,8 @@ pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_i
 
       let report_data = json!({
         "base": config.base,
-        "reports": reports
+        "plan": benchmark.iter().map(|item| item.source.clone()).collect::<Vec<_>>(),
+        "baseline": reports
       });
 
       writer::write_file(report_path, serde_yaml::to_string(&report_data).unwrap());
@@ -165,6 +179,55 @@ pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_i
         reports,
         duration,
       }
+    }
+  })
+}
+
+/// Executes a benchmark plan that has already been loaded (e.g., from a report file).
+///
+/// # Arguments
+///
+/// - `benchmark` (`Benchmark`) - The pre-constructed execution plan.
+/// - `base` (`String`) - The base URL to use.
+/// - `relaxed_interpolations` (`bool`) - If true, missing variables won't cause a panic.
+/// - `no_check_certificate` (`bool`) - If true, SSL certificate validation is disabled.
+/// - `quiet` (`bool`) - If true, minimizes console output.
+/// - `timeout` (`u64`) - Request timeout in seconds.
+/// - `verbose` (`bool`) - If true, enables detailed logging.
+/// - `exec_terminal` (`Option<String>`) - Optional terminal override.
+///
+/// # Returns
+///
+/// - `BenchmarkResult` - The results and duration of the run.
+#[allow(clippy::too_many_arguments)]
+pub fn execute_from_plan(benchmark: Benchmark, base: String, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: u64, verbose: bool, exec_terminal: Option<String>) -> BenchmarkResult {
+  let config = Arc::new(Config {
+    base,
+    concurrency: 1,
+    iterations: 1,
+    relaxed_interpolations,
+    no_check_certificate,
+    rampup: 0,
+    quiet,
+    timeout,
+    verbose,
+    exec_terminal,
+  });
+
+  let rt = runtime::Builder::new_current_thread().enable_all().worker_threads(1).build().unwrap();
+
+  rt.block_on(async {
+    let pool_store: PoolStore = PoolStore::new();
+    let benchmark = Arc::new(benchmark);
+    let pool = Arc::new(Mutex::new(pool_store));
+
+    let begin = Instant::now();
+    let reports = run_iteration(benchmark.clone(), pool.clone(), config.clone(), 0).await;
+    let duration = begin.elapsed().as_secs_f64();
+
+    BenchmarkResult {
+      reports: vec![reports],
+      duration,
     }
   })
 }

@@ -15,7 +15,7 @@
 
 use super::pick;
 use crate::actions::Request;
-use crate::engine::benchmark::Benchmark;
+use crate::engine::benchmark::{ActionItem, Benchmark};
 use crate::parsing::interpolator::INTERPOLATION_REGEX;
 use crate::parsing::reader;
 use rand::seq::SliceRandom;
@@ -105,7 +105,14 @@ pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
   for (index, with_item) in with_items_file.iter().take(pick).enumerate() {
     let index = index as u32;
 
-    benchmark.push(Box::new(Request::new(item, Some(with_item.clone()), Some(index))));
+    let mut source = item.clone();
+    if let Some(map) = source.as_mapping_mut() {
+      map.insert(Value::String("with_item".into()), with_item.clone());
+      map.insert(Value::String("index".into()), Value::Number(serde_yaml::Number::from(index)));
+      map.remove(&Value::String("with_items_from_file".into()));
+    }
+
+    benchmark.push(ActionItem::new(Box::new(Request::new(item, Some(with_item.clone()), Some(index))), source));
   }
 }
 

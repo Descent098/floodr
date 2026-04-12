@@ -289,6 +289,9 @@ impl Request {
       }
     }
 
+    let final_with_item = with_item.or_else(|| item.get("with_item").cloned());
+    let final_index = index.or_else(|| item.get("index").and_then(|v| v.as_u64()).map(|v| v as u32));
+
     Request {
       name,
       url,
@@ -296,8 +299,8 @@ impl Request {
       method,
       headers,
       body,
-      with_item,
-      index,
+      with_item: final_with_item,
+      index: final_index,
       assign,
     }
   }

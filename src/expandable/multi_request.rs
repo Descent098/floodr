@@ -22,7 +22,7 @@ use serde_yaml::Value;
 
 use super::pick;
 use crate::actions::Request;
-use crate::engine::benchmark::Benchmark;
+use crate::engine::benchmark::{ActionItem, Benchmark};
 use crate::parsing::interpolator::INTERPOLATION_REGEX;
 
 /// Checks if the provided YAML item represents a literal list-expanded request action.
@@ -104,7 +104,14 @@ pub fn expand(item: &Value, benchmark: &mut Benchmark) {
         panic!("Interpolations not supported in 'with_items' children!");
       }
 
-      benchmark.push(Box::new(Request::new(item, Some(with_item.clone()), Some(index))));
+      let mut source = item.clone();
+      if let Some(map) = source.as_mapping_mut() {
+        map.insert(serde_yaml::Value::String("with_item".to_string()), with_item.clone());
+        map.insert(serde_yaml::Value::String("index".to_string()), serde_yaml::Value::Number(index.into()));
+        map.remove(&serde_yaml::Value::String("with_items".to_string()));
+      }
+
+      benchmark.push(ActionItem::new(Box::new(Request::new(item, Some(with_item.clone()), Some(index))), source));
     }
   }
 }
