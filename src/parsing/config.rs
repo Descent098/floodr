@@ -33,6 +33,7 @@ const NRAMPUP: i64 = 0;
 ///
 /// let config = Config::new("config.yml", false, false, false, 1000, false, None);
 /// ```
+#[derive(Clone)]
 pub struct Config {
   pub base: String,
   pub concurrency: i64,
@@ -74,7 +75,7 @@ impl Config {
   /// ```rust,ignore
   /// let config = Config::new("test.yml", false, false, false, 10, true, None);
   /// ```
-  pub fn new(path: &str, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool,  timeout: u64, verbose: bool, exec_terminal: Option<String>) -> Config {
+  pub fn new(path: &str, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool,  timeout: u64, verbose: bool, exec_terminal: Option<String>, base_override: Option<String>) -> Config {
     let config_docs = reader::read_file_as_yml(path);
     let config_doc = &config_docs[0];
 
@@ -84,7 +85,11 @@ impl Config {
     let iterations = read_i64_configuration(config_doc, &interpolator, "iterations", NITERATIONS);
     let concurrency = read_i64_configuration(config_doc, &interpolator, "concurrency", iterations);
     let rampup = read_i64_configuration(config_doc, &interpolator, "rampup", NRAMPUP);
-    let base = read_str_configuration(config_doc, &interpolator, "base", "");
+    
+    let base = match base_override {
+      Some(b) => b,
+      None => read_str_configuration(config_doc, &interpolator, "base", ""),
+    };
 
     if concurrency > iterations {
       panic!("The concurrency can not be higher than the number of iterations")

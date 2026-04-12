@@ -125,6 +125,8 @@ pub trait Runnable {
   async fn execute(&self, context: &mut Context, reports: &mut Reports, pool: &Pool, config: &Config);
 }
 
+use serde::{Serialize, Deserialize};
+
 /// Represents the result and statistics of an executed action.
 ///
 /// # Fields
@@ -144,7 +146,7 @@ pub trait Runnable {
 ///     status: 200,
 /// };
 /// ```
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Report {
   pub name: String,
   pub duration: f64,

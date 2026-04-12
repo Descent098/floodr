@@ -113,6 +113,11 @@ impl Cli {
       process::exit(0);
     }
 
+    let mut base_override = None;
+    if let Some(Commands::Compare { ref report_file, .. }) = self.command {
+        base_override = Some(floodr::parsing::checker::get_base(report_file));
+    }
+
     let benchmark_result = benchmark::execute(
       &self.benchmark,
       self.report.as_deref(),
@@ -123,6 +128,7 @@ impl Cli {
       self.verbose,
       self.exec_terminal.as_deref(),
       &tags,
+      base_override,
     );
 
     let list_reports = benchmark_result.reports;

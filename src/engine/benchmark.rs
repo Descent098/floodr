@@ -78,22 +78,6 @@ async fn run_iteration(benchmark: Arc<Benchmark>, pool: Pool, config: Arc<Config
   reports
 }
 
-/// Joins a vector of displayable items into a single string with a separator.
-///
-/// # Arguments
-///
-/// - `l` (`Vec<S>`) - The list of items to join.
-/// - `sep` (`&str`) - The separator string.
-///
-/// # Returns
-///
-/// - `String` - The joined string.
-fn join<S: ToString>(l: Vec<S>, sep: &str) -> String {
-  l.iter().fold(
-    "".to_string(),
-    |a,b| if !a.is_empty() {a+sep} else {a} + &b.to_string()
-  )
-}
 
 /// Executes the full benchmark based on the provided parameters.
 ///
@@ -123,8 +107,8 @@ fn join<S: ToString>(l: Vec<S>, sep: &str) -> String {
 /// let result = execute("test.yml", None, false, false, false, false, Some("10"), true, None, &Tags::new(None, None));
 /// ```
 #[allow(clippy::too_many_arguments)]
-pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: Option<&str>, verbose: bool, exec_terminal: Option<&str>, tags: &Tags) -> BenchmarkResult {
-  let config = Arc::new(Config::new(benchmark_path, relaxed_interpolations, no_check_certificate, quiet, timeout.map_or(10, |t| t.parse().unwrap_or(10)), verbose, exec_terminal.map(String::from)));
+pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: Option<&str>, verbose: bool, exec_terminal: Option<&str>, tags: &Tags, base_override: Option<String>) -> BenchmarkResult {
+  let config = Arc::new(Config::new(benchmark_path, relaxed_interpolations, no_check_certificate, quiet, timeout.map_or(10, |t| t.parse().unwrap_or(10)), verbose, exec_terminal.map(String::from), base_override));
 
   if report_path_option.is_some() {
     println!("{}: {}. Ignoring {} and {} properties...", "Report mode".yellow(), "on".purple(), "concurrency".yellow(), "iterations".yellow());
@@ -155,9 +139,14 @@ pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_i
     let pool = Arc::new(Mutex::new(pool_store));
 
     if let Some(report_path) = report_path_option {
-      let reports = run_iteration(benchmark.clone(), pool.clone(), config, 0).await;
+      let reports = run_iteration(benchmark.clone(), pool.clone(), config.clone(), 0).await;
 
-      writer::write_file(report_path, join(reports, ""));
+      let report_data = json!({
+        "base": config.base,
+        "reports": reports
+      });
+
+      writer::write_file(report_path, serde_yaml::to_string(&report_data).unwrap());
 
       BenchmarkResult {
         reports: vec![],

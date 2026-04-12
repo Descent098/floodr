@@ -8,6 +8,21 @@ use colored::*;
 use crate::actions::Report;
 use crate::parsing::reader;
 
+/// Extracts the base URL from a report file.
+///
+/// # Arguments
+///
+/// - `filepath` (`&str`) - Path to the report YAML file.
+///
+/// # Returns
+///
+/// - `String` - The base URL found in the report.
+pub fn get_base(filepath: &str) -> String {
+  let docs = reader::read_file_as_yml(filepath);
+  let doc = &docs[0];
+  doc.get("base").and_then(|v| v.as_str()).unwrap_or("").to_string()
+}
+
 /// Compares the results of a benchmark run against a previous execution's baseline.
 ///
 /// It iterates through each request in the reports and checks if the duration
@@ -39,12 +54,12 @@ use crate::parsing::reader;
 pub fn compare(list_reports: &[Vec<Report>], filepath: &str, threshold: &str) -> Result<(), i32> {
   let threshold_value = match threshold.parse::<f64>() {
     Ok(v) => v,
-    _ => panic!("arrrgh"),
+    _ => panic!("Invalid threshold value: {threshold}"),
   };
 
   let docs = reader::read_file_as_yml(filepath);
   let doc = &docs[0];
-  let items = doc.as_sequence().unwrap();
+  let items = doc.get("reports").and_then(|v| v.as_sequence()).unwrap_or_else(|| panic!("Report file '{filepath}' does not contain a 'reports' sequence"));
   let mut slow_counter = 0;
 
   println!();
