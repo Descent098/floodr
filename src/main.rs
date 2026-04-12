@@ -6,7 +6,7 @@ use floodr::engine::benchmark;
 use floodr::parsing::tags;
 use std::process;
 use colored::control;
-use clap::{crate_version, Parser};
+use clap::{crate_version, Parser, Subcommand};
 
 /// The main entry point calling `floodr::main()`.
 ///
@@ -21,7 +21,7 @@ use clap::{crate_version, Parser};
 /// ```
 #[derive(Parser, Debug)]
 #[command(
-  name = "drill",
+  name = "floodr",
   version = crate_version!(),
   about = "A configurable, simple rust-based HTTP load testing system",
   long_about = None,
@@ -39,13 +39,9 @@ struct Cli {
   #[arg(short = 'r', long = "report", conflicts_with = "compare")]
   report: Option<String>,
 
-  /// Sets a compare file
-  #[arg(short = 'c', long = "compare", conflicts_with = "report")]
-  compare: Option<String>,
-
-  /// Sets a threshold value in ms amongst the compared file
-  #[arg(short = 't', long = "threshold", conflicts_with = "report", requires = "compare")]
-  threshold: Option<String>,
+  /// Subcommand to execute
+  #[command(subcommand)]
+  command: Option<Commands>,
 
   /// Do not panic if an interpolation is not present. (Not recommended)
   #[arg(long = "relaxed-interpolations")]
@@ -88,6 +84,17 @@ struct Cli {
   exec_terminal: Option<String>,
 }
 
+#[derive(Subcommand, Debug)]
+enum Commands {
+  /// Compares current execution metrics against a previous benchmark report
+  Compare {
+    /// Baseline report file to compare against
+    report_file: String,
+    /// Threshold value in milliseconds
+    threshold: String,
+  },
+}
+
 impl Cli {
   fn run(self) -> process::ExitCode {
 
@@ -122,11 +129,10 @@ impl Cli {
     let duration = benchmark_result.duration;
 
     floodr::show_stats(&list_reports, self.stats, duration);
-    floodr::compare_benchmark(
-      &list_reports,
-      self.compare.as_deref(),
-      self.threshold.as_deref(),
-    );
+
+    if let Some(Commands::Compare { report_file, threshold }) = self.command {
+      floodr::compare_benchmark(&list_reports, Some(&report_file), Some(&threshold));
+    }
 
     return process::ExitCode::SUCCESS;
   }
