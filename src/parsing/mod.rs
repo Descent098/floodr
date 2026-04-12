@@ -4,9 +4,9 @@
 //! benchmark files, configuration, tags, and variable interpolation.
 
 pub mod checker;
+pub mod comparison_loader;
 pub mod config;
 pub mod interpolator;
 pub mod reader;
 pub mod tags;
 pub mod writer;
-pub mod comparisson_loader;

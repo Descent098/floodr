@@ -37,20 +37,6 @@ pub fn get_base(filepath: &str) -> String {
 /// # Returns
 ///
 /// - `Result<(), i32>` - `Ok(())` if all requests are within threshold, otherwise `Err(count)` where `count` is the number of slow requests.
-///
-/// # Panics
-///
-/// - Panics if the threshold string is not a valid floating point number.
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// use floodr::actions::Report;
-/// use floodr::parsing::checker::compare;
-/// 
-/// let reports = vec![vec![Report { name: "test".to_string(), duration: 150.0, status: 200 }]];
-/// let result = compare(&reports, "baseline.yml", "50.0");
-/// ```
 pub fn compare(list_reports: &[Vec<Report>], filepath: &str, threshold: &str) -> Result<(), i32> {
   let threshold_value = match threshold.parse::<f64>() {
     Ok(v) => v,
@@ -61,8 +47,6 @@ pub fn compare(list_reports: &[Vec<Report>], filepath: &str, threshold: &str) ->
   let doc = &docs[0];
   let items = doc.get("baseline").and_then(|v| v.as_sequence()).unwrap_or_else(|| panic!("Report file '{filepath}' does not contain a 'baseline' sequence"));
   let mut slow_counter = 0;
-
-  println!();
 
   for report in list_reports {
     for (i, report_item) in report.iter().enumerate() {

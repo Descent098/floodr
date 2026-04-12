@@ -126,8 +126,8 @@ impl Cli {
       ..
     }) = self.command
     {
-      let (base, plan_items, _) = floodr::parsing::comparisson_loader::load_report_data(report_file);
-      let benchmark_plan = floodr::parsing::comparisson_loader::load_from_items(plan_items);
+      let (base, plan_items, _) = floodr::parsing::comparison_loader::load_report_data(report_file);
+      let benchmark_plan = floodr::parsing::comparison_loader::load_from_items(plan_items);
 
       benchmark::execute_from_plan(benchmark_plan, base, self.relaxed_interpolations, self.no_check_certificate, self.quiet, self.request_timeout.as_deref().map_or(10, |t| t.parse().unwrap_or(10)), self.verbose, self.exec_terminal.clone())
     } else {
