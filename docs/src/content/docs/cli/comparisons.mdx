@@ -1,0 +1,209 @@
+---
+title: What is a Comparison?
+---
+import { Aside, Code, Card } from '@astrojs/starlight/components';
+
+Floodr features a system for comparing runs. You are able to dump a benchmark run to a report. With the following benchmark file:
+
+<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch route
+    request:
+      url: /
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+We can run the benchmark and dump the results to a report:
+
+```bash
+$> floodr --report report.yaml
+Report mode: on. Ignoring concurrency and iterations properties...
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 315ms
+```
+
+<Aside type={"tip"}>
+When running a report `concurrency` and `iterations` are ignored
+</Aside>
+
+
+This will produce a report that looks like this:
+
+<Code lang="yaml" code={`base: http://localhost:4896
+baseline:
+- duration: 314.9328
+  name: Fetch route
+  status: 200
+plan:
+- assign: gotham
+  name: Fetch route
+  request:
+    url: /`} title="report.yml"/>
+
+
+You can then use the `compare` subcommand to compare current run against report with a threshold to highlight values that go over the threshold in `ms`. In this case we're using the report from before, with a threshold of one ms, meaning any request actions with $$\geq$$1ms difference are highlighted:
+
+```bash
+$> floodr compare report.yml 1
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 318ms
+
+Fetch route               is 4ms slower than before
+```
+
+<Aside type="caution">
+    As of version 1.0.0 the report stores a copy of it's plan. Previously steps were followed according to the benchmark file, which is now completely ignored. To update the plan for a comparison, re-dump the report after changes
+</Aside>
+
+## Expandables
+
+The comparisons work with [expandables](/floodr/benchmark-reference/expandables). For example:
+
+<Code lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch route
+    request:
+      url: /
+    assign: gotham
+  - name: Assert URL
+    assert:
+      key: gotham.url
+      value: http://localhost:4896/
+  - name: Assert version is http 1.1
+    assert:
+      key: gotham.version
+      value: http/1.1
+  - name: Fetch it again
+    request:
+      url: /
+    with_items:
+      - 70
+      - 73`} title="benchmark.yml"/>
+
+Would result in the following report file
+
+<Code lang="yaml" code={`base: http://localhost:4896
+baseline:
+- duration: 309.24420000000003
+  name: Fetch route
+  status: 200
+- duration: -2.1769
+  name: Fetch it again
+  status: 200
+- duration: -5.1406
+  name: Fetch it again
+  status: 200
+- duration: -8.114
+  name: Fetch it again
+  status: 200
+plan:
+- assign: gotham
+  name: Fetch route
+  request:
+    url: /
+- assert:
+    key: gotham.url
+    value: http://localhost:4896/
+  name: Assert URL
+- assert:
+    key: gotham.version
+    value: http/1.1
+  name: Assert version is http 1.1
+- index: 0
+  name: Fetch it again
+  request:
+    url: /
+  with_item: 70
+- index: 1
+  name: Fetch it again
+  request:
+    url: /
+  with_item: 73
+- index: 2
+  name: Fetch it again
+  request:
+    url: /
+  with_item: 75
+`} title="report.yml"/>
+
+Keep in mind that if **any** of these are off they will be displayed in order, if multiple are, then they all will be. For example
+
+```bash
+$>floodr compare report.yml 1
+Fetch route               http://localhost:4896/ 200 OK 306ms
+Assert URL                gotham.url=http://localhost:4896/?
+Assert version is http 1.1 gotham.version=http/1.1?
+Fetch it again            http://localhost:4896/ 200 OK 2ms
+Fetch it again            http://localhost:4896/ 200 OK 5ms
+Fetch it again            http://localhost:4896/ 200 OK 8ms
+Fetch it again            is 2ms slower than before
+Fetch it again            is 5ms slower than before
+Fetch it again            is 8ms slower than before
+```

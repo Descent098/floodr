@@ -1,4 +1,4 @@
-//! Loader module for reconstructing benchmark plans from report files to use for comparissons
+//! Loader module for reconstructing benchmark plans from report files to use for comparisons
 
 use serde_yaml::Value;
 use crate::engine::benchmark::{ActionItem, Benchmark};

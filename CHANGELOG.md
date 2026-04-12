@@ -23,6 +23,13 @@ The first release of floodr after converting it from drill. The focus for this r
 - **Breaking change** Removed `-o` short flag
 - **Breaking Change** Changed `--timeout` to `--request-timeout`
 - **Breaking change** Removed `--nanosec` and `-n` flags for "nanosecond" precision. Rust doesn't actually guarentee this (since many OS's don't), it's usually off by a few hundred even though it lets you scope to that resolution. So, just removing it since it can give inaccurate info
+- **Breaking change** Updated compare system
+    - Removed `--compare` and `--threshold` flags converting them to a subcommand. So `floodr --compare report.yml --threshold 2` becomes `floodr compare report.yml 2`
+    - Report files now require a `base` field to know which domain to use
+- **Breaking change** updated `--report` 
+    - File now includes a `base` value
+    - File now includes a `plan` which is a copy of the plan used to generate the report
+    - File now includes a `baseline` which is the measured value to compare against
 - Added ability to `assert` against the request URL and Http version
 - Removed OpenSSL system-level dependency
 - Made exec acitons cross platform

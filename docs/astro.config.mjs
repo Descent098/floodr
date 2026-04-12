@@ -85,6 +85,10 @@ export default defineConfig({
                                 }
                             ]
                         },
+                        {
+                        label: "CLI Reference",
+                        autogenerate: { directory: "cli" }
+                    },
                     ],
 
                 },
@@ -108,26 +112,6 @@ export default defineConfig({
                         },
                     ],
                 },
-
-                {
-                    label: "CLI Reference",
-                    link: "/cli",
-                    icon: "seti:shell",
-                    
-                    items: [
-                        {
-                            label: "Introduction",
-                            link: "/cli"
-                        },
-                        {
-                            label: 'Comparisons & Reports',
-                            autogenerate: { directory: "cli/comparisons" },
-                        },
-                    ],
-
-                },
-
-
             ],
             ), // end of sidebar config
         ],
