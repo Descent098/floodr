@@ -183,7 +183,7 @@ impl Runnable for Delay {
     sleep(Duration::from_millis(self.milliseconds)).await;
 
     if !config.quiet {
-      if self.milliseconds % 1000 == 0 {
+      if self.milliseconds.is_multiple_of(1000) {
         println!("{:width$} {}{}", self.name.green(), (self.milliseconds / 1000).to_string().cyan().bold(), "s".magenta(), width = 25);
       } else {
         println!("{:width$} {}{}", self.name.green(), self.milliseconds.to_string().cyan().bold(), "ms".magenta(), width = 25);

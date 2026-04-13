@@ -75,6 +75,7 @@ impl Config {
   /// ```rust,ignore
   /// let config = Config::new("test.yml", false, false, false, 10, true, None);
   /// ```
+  #[allow(clippy::too_many_arguments)]
   pub fn new(path: &str, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool,  timeout: u64, verbose: bool, exec_terminal: Option<String>, base_override: Option<String>) -> Config {
     let config_docs = reader::read_file_as_yml(path);
     let config_doc = &config_docs[0];

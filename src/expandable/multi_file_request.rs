@@ -94,11 +94,9 @@ pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
 
   let mut with_items_file = reader::read_file_as_yml_array(final_path);
 
-  if let Some(shuffle) = item.get("shuffle").and_then(|v| v.as_bool()) {
-    if shuffle {
+  if let Some(shuffle) = item.get("shuffle").and_then(|v| v.as_bool()) && shuffle {
       let mut rng = thread_rng();
       with_items_file.shuffle(&mut rng);
-    }
   }
 
   let pick = pick(item, &with_items_file);

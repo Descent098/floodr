@@ -28,24 +28,20 @@ use std::process;
 )]
 struct Cli {
   /// Benchmark file to run
-  #[arg(default_value = "benchmark.yaml")]
+  #[arg(default_value = "benchmark.yml")]
   benchmark: String,
 
   /// Shows request statistics
-  #[arg(short = 's', long = "stats")]
+  #[arg(short = 's', long = "stats", conflicts_with="report")]
   stats: bool,
 
   /// Sets a report file
-  #[arg(short = 'r', long = "report")]
+  #[arg(short = 'r', long = "report", conflicts_with="stats")]
   report: Option<String>,
 
   /// Subcommand to execute
   #[command(subcommand)]
   command: Option<Commands>,
-
-  /// Do not panic if an interpolation is not present. (Not recommended)
-  #[arg(long = "relaxed-interpolations")]
-  relaxed_interpolations: bool,
 
   /// Disables SSL certification check. (Not recommended)
   #[arg(long = "no-check-certificate")]
@@ -68,7 +64,7 @@ struct Cli {
   list_tasks: bool,
 
   /// Disables output
-  #[arg(short = 'q', long = "quiet")]
+  #[arg(short = 'q', long = "quiet", conflicts_with="verbose")]
   quiet: bool,
 
   /// Set timeout in seconds for a request
@@ -76,7 +72,7 @@ struct Cli {
   request_timeout: Option<String>,
 
   /// Toggle verbose output
-  #[arg(short = 'v', long = "verbose")]
+  #[arg(short = 'v', long = "verbose", conflicts_with="quiet")]
   verbose: bool,
 
   /// Set the terminal to run exec commands with
@@ -129,9 +125,9 @@ impl Cli {
       let (base, plan_items, _) = floodr::parsing::comparison_loader::load_report_data(report_file);
       let benchmark_plan = floodr::parsing::comparison_loader::load_from_items(plan_items);
 
-      benchmark::execute_from_plan(benchmark_plan, base, self.relaxed_interpolations, self.no_check_certificate, self.quiet, self.request_timeout.as_deref().map_or(10, |t| t.parse().unwrap_or(10)), self.verbose, self.exec_terminal.clone())
+      benchmark::execute_from_plan(benchmark_plan, base, false, self.no_check_certificate, self.quiet, self.request_timeout.as_deref().map_or(10, |t| t.parse().unwrap_or(10)), self.verbose, self.exec_terminal.clone())
     } else {
-      benchmark::execute(&self.benchmark, self.report.as_deref(), self.relaxed_interpolations, self.no_check_certificate, self.quiet, self.request_timeout.as_deref(), self.verbose, self.exec_terminal.as_deref(), &tags, base_override)
+      benchmark::execute(&self.benchmark, self.report.as_deref(), false, self.no_check_certificate, self.quiet, self.request_timeout.as_deref(), self.verbose, self.exec_terminal.as_deref(), &tags, base_override)
     };
 
     let list_reports = benchmark_result.reports;

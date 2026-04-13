@@ -568,8 +568,8 @@ impl Runnable for Request {
       context.insert("item".to_string(), yaml_to_json(self.with_item.clone().unwrap()));
     }
 
-    if self.index.is_some() {
-      context.insert("index".to_string(), json!(self.index.unwrap()));
+    if let Some(idx) = self.index {
+      context.insert("index".to_string(), json!(idx));
     }
 
     let (res, duration_ms) = self.send_request(context, pool, config).await;
