@@ -19,7 +19,7 @@ We can do more than just statelessly make requests. Floodr benchmarks can be con
 
 When creating an action you can assign it a to a variable:
 
-<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896'
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
 plan:
   # Setup request and assign it to the variable gothamServer
   - name: Fetch route
@@ -31,13 +31,12 @@ plan:
 
 The variable can then be used later to access information about the response. 
 
-
 ## Assertion Driven Tests
 
 
 There are many different types of [actions](/floodr/benchmark-reference/actions) we can use to help test with. For example we could use an [assert](/floodr/benchmark-reference/actions) to cause the test to crash if a certain confition is not met. For example, let's say we want to make sure every request returns a 200 status code: 
 
-<Code title="benchmark.yaml" lang="yaml" code={
+<Code title="benchmark.yml" lang="yaml" code={
 `base: 'http://localhost:4896'
 plan:
   # Setup request and assign it to the variable gothamServer
@@ -117,7 +116,7 @@ fn main() {
 **The plan in the benchmark is run step-by-step on each iteration**, so you cannot combine assignments and assertions in 1 action:
 
 
-<Code title="benchmark.yaml" lang="yaml" mark={["assert: # WILL CAUSE A PANIC", "key: gothamServer.status", "value: 200"]} code={
+<Code title="benchmark.yml" lang="yaml" mark={["assert: # WILL CAUSE A PANIC", "key: gothamServer.status", "value: 200"]} code={
 `base: 'http://localhost:4896'
 plan:
   # Setup request and assign it to the variable gothamServer
@@ -149,7 +148,7 @@ note: run with \`RUST_BACKTRACE=1\` environment variable to display a backtrace`
 The same is true if you define the assignment after the assertion:
 
 
-<Code title="benchmark.yaml" lang="yaml" mark={["- name: Assert response","assert: # WILL CAUSE A PANIC", "key: gothamServer.status", "value: 200"]} code={`
+<Code title="benchmark.yml" lang="yaml" mark={["- name: Assert response","assert: # WILL CAUSE A PANIC", "key: gothamServer.status", "value: 200"]} code={`
 base: 'http://localhost:4896'
 plan:
   - name: Assert response
@@ -183,7 +182,7 @@ note: run with \`RUST_BACKTRACE=1\` environment variable to display a backtrace
 
 But, you can use the assigned variable in multiple actions after it's registered:
 
-<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896'
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
 plan:
   - name: Fetch route
     request:
@@ -253,7 +252,7 @@ On top of normal actions there are various [expandables](/floodr/benchmark-refer
 
 For example if I wanted to hit every user ID in a range from 1 to 10 I could use:
 
-<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896'
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
 
 plan:
   - name: Fetch route

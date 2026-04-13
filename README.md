@@ -1,7 +1,7 @@
 # floodr
 
-[![](https://img.shields.io/crates/v/floodr.svg?ts=2)](https://crates.io/crates/floodr)
-![](https://travis-ci.com/fcsonline/floodr.svg?branch=master)
+
+## REFACTOR IN PROGRESS, DON'T USE YET
 
 floodr is a HTTP load testing application written in Rust. The main goal
 for this project is to build a really lightweight tool as alternative to other

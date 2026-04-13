@@ -1,10 +1,10 @@
 ---
-title: Assert (TODO)
+title: Assertions
 description: Describing how to assert properties of a response
 ---
 import { Aside, Code } from '@astrojs/starlight/components';
 
-Asserts are useful in situations where you want to consider a particular condition as a failure. You can find details about available fields in the [assign section](/floodr/benchmark-reference/actions/requests/#assignment).
+Asserts are useful in situations where you want to consider a particular condition as a failure. You can find details about available fields in each respective actions page. So, the fields for requests can be found in the [request](/floodr/benchmark-reference/actions/request), etc.
 
 ## Examples
 
@@ -13,7 +13,7 @@ Below are examples of how to use the feature
 ### Assert Status Code
 For example, if you're testing redirects, and you want to assert that the response is a 301 you could setup a YAML file with:
 
-<Code title="benchmark.yaml" lang="yaml" code={`# Assume a 301 is in place for /api/latest -> /api/v3
+<Code title="benchmark.yml" lang="yaml" code={`# Assume a 301 is in place for /api/latest -> /api/v3
 plan:
   - name: Fetch redirected route
     request:
@@ -104,7 +104,7 @@ fn main() {
 
 We can then test the status code, presence of headers, url, and http version using:
 
-<Code lang="yaml" title="benchmark.yaml" code={`base: 'http://localhost:4896'
+<Code lang="yaml" title="benchmark.yml" code={`base: 'http://localhost:4896'
 
 plan:
   # Setup request and assign it to the name gothamServer
@@ -175,3 +175,97 @@ Sample standard deviation 157ms
 ```
 
 Keep in mind that each individual check is not expensive, but the more you assert, the more latency per-iteration. 
+
+### Asserting More Complex States
+
+Assertions only allow for a simple check of equality. If you need something more dynamic, you will need to take advantage of [exec](/floodr/benchmark-reference/actions/exec) to do fancier processing. For example consider this file that checks if the status is less than 300 using python (you could also use `bash`, or some other terminal for simplicity):
+
+<Code lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch route
+    request:
+      url: /
+    assign: gotham
+  - name: Run python check
+    exec:
+      command: 'print({{gotham.status}}<300)'
+    assign: codeIsValid
+  - name: Assert request is valid status code
+    assert:
+      key: codeIsValid
+      value: "True"`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+</Aside>
+
+We can then run the code using:
+
+```bash
+$>floodr --exec-terminal python
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 314ms
+Run python check          print({{gotham.status}}<300)
+Assert request is valid status code codeIsValid=True?
+```

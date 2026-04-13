@@ -106,9 +106,17 @@ export default defineConfig({
                             label: 'Actions',
                             autogenerate: { directory: "benchmark-reference/actions" },
                         },
-                                                    {
+                        {
                             label: 'Expandables',
-                            autogenerate: { directory: "benchmark-reference/expandables" },
+                            link: "/benchmark-reference/expandables"
+                        },
+                        {
+                            label: 'Tagging',
+                            link: "/benchmark-reference/tags"
+                        },
+                        {
+                            label: 'Multi-file tests',
+                            link: "/benchmark-reference/include"
                         },
                     ],
                 },

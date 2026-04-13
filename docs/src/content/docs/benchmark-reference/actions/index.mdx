@@ -7,16 +7,16 @@ import { Code, Aside } from '@astrojs/starlight/components';
 
 An individual action is basically a step that runs once per iteration. This can include making a [request](/floodr/benchmark-reference/request), [introducing a delay](/floodr/benchmark-reference/delay), etc. For example with the following file:
 
-<Code title="benchmark.yaml" lang="yaml" code={`
+<Code title="benchmark.yml" lang="yaml" code={`
 base: 'http://localhost:4896'
 
 plan:
   - name: Login
     request:
       url: /login?user=admin&pass=test
-  - name: Wait a few seconds
+  - name: Wait a few milliseconds
     delay:
-      seconds: 3
+      milliseconds: 3000
   - name: Hit a non-existant page
     request:
       url: /asdkljfhsadfkj
@@ -32,7 +32,7 @@ Creates 4 actions, and causes 2 HTTP requests. These actions make up a single it
 ```mermaid
 flowchart TD
     B(("Login<br/><br/>type: request<br/>url:'/login?user=admin&pass=test'"))
-    C(("Wait a few seconds<br/><br/>type: delay<br/>seconds: 3"))
+    C(("Wait a few milliseconds<br/><br/>type: delay<br/>milliseconds: 3000"))
     D(("Hit a non-existant page<br/><br/>type: request<br/>url: /asdkljfhsadfkj<br/>assign: invalid"))
     E(("Assert last request is invalid<br/><br/>type: assert<br/>key: invalid.status<br/>value: 404"))
 
@@ -40,5 +40,5 @@ flowchart TD
 ```
 
 <Aside type={"danger"}>
-It's important to note that actions run **sequentially**, meaning the order you define them in is relevent to their execution. This means [assignments](/floodr/benchmark-reference/actions/requests/#assignment) **must** happen before the variables are used.
+It's important to note that actions run **sequentially**, meaning the order you define them in is relevent to their execution. This means [assignments](/floodr/benchmark-reference/actions/assign) **must** happen before the variables are used.
 </Aside>

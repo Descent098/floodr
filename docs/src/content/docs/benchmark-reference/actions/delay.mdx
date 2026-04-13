@@ -1,10 +1,43 @@
 ---
-title: Delay (TODO)
+title: Delay
 ---
 import { Code, Aside } from '@astrojs/starlight/components';
 
+Delays are... well, delays. It allows you to introduce an artificial pause in an iteration. This is useful for simulating real-world user behavior or waiting for background tasks to complete.
+
+## Units
+
+The `delay` action supports both `milliseconds` and `seconds`. They **are not addative**, it's one or the other. 
+
+- **`milliseconds`**: If specified, this value is used directly
+- **`seconds`**: If specified (and `milliseconds` is missing), the value is multiplied by 1000 to convert to milliseconds
+- **Both specified**: If both fields are present, `milliseconds` takes precedence and `seconds` is ignored
+
+<Aside type="caution">
+Either `milliseconds` or `seconds` must be provided, or the benchmark will panic during parsing.
+</Aside>
 
 ## Examples
 
 Below are examples of how to use the feature
 
+### Just delay
+
+Fiven the following benchmark file:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: http://localhost:3000
+plan:
+  - name: Wait for 500ms
+    delay:
+      milliseconds: 500
+
+  - name: Wait for 2 seconds
+    delay:
+      seconds: 2
+`}/>
+
+<Aside type="note">
+Actions are run **in the order they're specified**, meaning that delays will run during an iteration at whatever point they are specified. In the above example it will wait 500ms, then wait 2 seconds
+</Aside>
+
+The system will just wait for a total of 2.5 seconds.

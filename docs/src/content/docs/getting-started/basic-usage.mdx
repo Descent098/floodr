@@ -16,7 +16,7 @@ To work with floodr currently you will need to know [YAML](https://docs.ansible.
 
 To get started let's look at a simple benchmark that just hits `http://localhost:4896/` once. Our file would look like this:
 
-<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
 
 plan: # An array of actions to take
   - name: Fetch route
@@ -88,13 +88,13 @@ fn main() {
 To run our file we would then run:
 
 ```bash
-floodr --benchmark benchmark.yaml
+floodr --benchmark benchmark.yml
 ```
 
 Which results in output like this:
 
 ```bash
-$> floodr --benchmark benchmark.yaml
+$> floodr --benchmark benchmark.yml
 Concurrency 1
 Iterations 1
 Rampup 0
@@ -140,7 +140,7 @@ Sample standard deviation 0ms
 
 We could now bump it up to do 100 requests across 10 threads:
 
-<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
 concurrency: 10 # Number of threads to run
 iterations: 100 # Number of times to run the actions defined in plan
 
@@ -153,7 +153,7 @@ plan: # An array of actions to take
 
 We can also add more actions to do more things (keep in mind each action runs **per iteration**):
 
-<Code title="benchmark.yaml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
 iterations: 10 # Number of times to run the actions defined in plan
 
 plan: # An array of actions to take
@@ -166,3 +166,4 @@ plan: # An array of actions to take
 
 This will run 20 requests (10 iterations of 1 request to `/` and 1 request to `/hello`)
 
+<Aside type="tip">To preview which tasks will run, you can use `floodr --list-tasks`</Aside>

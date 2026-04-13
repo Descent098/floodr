@@ -30,6 +30,7 @@ The first release of floodr after converting it from drill. The focus for this r
     - File now includes a `base` value
     - File now includes a `plan` which is a copy of the plan used to generate the report
     - File now includes a `baseline` which is the measured value to compare against
+- **Breaking change** Removed `--relaxed-interpolations`. It seems like the only situations it would be useful in are better handled in other ways, and I frequently found hard edge cases especially around headers. It's still available in the API if people need it, but exposing it in the CLI is not a good idea IMO
 - Added ability to `assert` against the request URL and Http version
 - Removed OpenSSL system-level dependency
 - Made exec acitons cross platform
@@ -56,3 +57,4 @@ The first release of floodr after converting it from drill. The focus for this r
 ## Chores
 
 - Bumped versions of all crates to latest
+- Fixed `cargo clippy -D warnings` statements
