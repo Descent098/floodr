@@ -81,6 +81,7 @@ impl<'a> Interpolator<'a> {
         if strict {
           let msg = format!("\n{}{}{}", "Unknown".red(), format!(" '{}' ", &capture).red(), "variable!".red(),);
           eprintln!("{}", msg);
+          eprintln!("Context: {:#?}", self.context);
           panic!("Unknown '{}' variable!", &capture);
         }
 
