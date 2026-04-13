@@ -8,10 +8,16 @@
 //!     request:
 //!       url: /api/users.json
 //! 
-//!   - name: Waiting some seconds
+//!   - name: Waiting some milliseconds
 //!     delay:
-//!       seconds: 3
+//!       milliseconds: 3000
 //! ```
+//!
+//! # Fallback Behavior
+//!
+//! - If `milliseconds` is specified, it is used directly.
+//! - If `seconds` is specified, it is automatically converted to milliseconds.
+//! - If both are specified, `milliseconds` takes precedence.
 
 use async_trait::async_trait;
 use colored::*;
@@ -34,9 +40,9 @@ use std::time::Duration;
 ///
 /// ```yaml
 /// plan:
-///   - name: Delay for 5 seconds
+///   - name: Delay for 500ms
 ///     delay:
-///       seconds: 5
+///       milliseconds: 500
 /// ```
 ///
 /// This equates to something like:
@@ -47,7 +53,7 @@ use std::time::Duration;
 ///
 /// #[derive(Serialize)]
 /// struct DelayItemDetails {
-///     seconds: u64,
+///     milliseconds: u64,
 /// }
 ///
 /// #[derive(Serialize)]
@@ -57,9 +63,9 @@ use std::time::Duration;
 /// }
 ///
 /// let config = DelayItem {
-///     name: "Delay for 5 seconds".to_string(),
+///     name: "Delay for 500ms".to_string(),
 ///     delay: DelayItemDetails {
-///         seconds: 5,
+///         milliseconds: 500,
 ///     },
 /// };
 /// let value = serde_yaml::to_value(config).unwrap();
@@ -67,8 +73,8 @@ use std::time::Duration;
 /// ```
 #[derive(Clone)]
 pub struct Delay {
-  name: String, // The name of the delay action (will show up in CLI)
-  seconds: u64, // The number of seconds to delay
+  name: String,      // The name of the delay action (will show up in CLI)
+  milliseconds: u64, // The number of milliseconds to delay
 }
 
 impl Delay {
@@ -90,7 +96,7 @@ impl Delay {
   ///
   /// #[derive(Serialize)]
   /// struct DelayItemDetails {
-  ///     seconds: u64,
+  ///     milliseconds: u64,
   /// }
   ///
   /// #[derive(Serialize)]
@@ -100,9 +106,9 @@ impl Delay {
   /// }
   ///
   /// let config = DelayItem {
-  ///     name: "Delay for 5 seconds".to_string(),
+  ///     name: "Delay for 500ms".to_string(),
   ///     delay: DelayItemDetails {
-  ///         seconds: 5,
+  ///         milliseconds: 500,
   ///     },
   /// };
   /// let value = serde_yaml::to_value(config).unwrap();
@@ -113,6 +119,9 @@ impl Delay {
   }
 
   /// Creates a new `Delay` action from a YAML item.
+  ///
+  /// Supports both `milliseconds` and `seconds` (converted to ms) fields.
+  /// `milliseconds` takes precedence if both are provided.
   ///
   /// # Arguments
   ///
@@ -131,7 +140,7 @@ impl Delay {
   ///
   /// #[derive(Serialize)]
   /// struct DelayItemDetails {
-  ///     seconds: u64,
+  ///     milliseconds: u64,
   /// }
   ///
   /// #[derive(Serialize)]
@@ -141,9 +150,9 @@ impl Delay {
   /// }
   ///
   /// let config = DelayItem {
-  ///     name: "Delay for 5 seconds".to_string(),
+  ///     name: "Delay for 500ms".to_string(),
   ///     delay: DelayItemDetails {
-  ///         seconds: 5,
+  ///         milliseconds: 500,
   ///     },
   /// };
   /// let value = serde_yaml::to_value(config).unwrap();
@@ -152,11 +161,18 @@ impl Delay {
   pub fn new(item: &Value, _with_item: Option<Value>) -> Delay {
     let name = extract(item, "name");
     let delay_val = item.get("delay").expect("delay field is required");
-    let seconds = u64::try_from(delay_val.get("seconds").and_then(|v| v.as_i64()).expect("Invalid number of seconds")).expect("Invalid number of seconds");
+    
+    let milliseconds = if let Some(ms) = delay_val.get("milliseconds").and_then(|v| v.as_i64()) {
+      u64::try_from(ms).expect("Invalid number of milliseconds")
+    } else if let Some(s) = delay_val.get("seconds").and_then(|v| v.as_i64()) {
+      u64::try_from(s).expect("Invalid number of seconds") * 1000
+    } else {
+      panic!("Either 'seconds' or 'milliseconds' must be provided in delay action");
+    };
 
     Delay {
       name,
-      seconds,
+      milliseconds,
     }
   }
 }
@@ -164,10 +180,14 @@ impl Delay {
 #[async_trait]
 impl Runnable for Delay {
   async fn execute(&self, _context: &mut Context, _reports: &mut Reports, _pool: &Pool, config: &Config) {
-    sleep(Duration::from_secs(self.seconds)).await;
+    sleep(Duration::from_millis(self.milliseconds)).await;
 
     if !config.quiet {
-      println!("{:width$} {}{}", self.name.green(), self.seconds.to_string().cyan().bold(), "s".magenta(), width = 25);
+      if self.milliseconds % 1000 == 0 {
+        println!("{:width$} {}{}", self.name.green(), (self.milliseconds / 1000).to_string().cyan().bold(), "s".magenta(), width = 25);
+      } else {
+        println!("{:width$} {}{}", self.name.green(), self.milliseconds.to_string().cyan().bold(), "ms".magenta(), width = 25);
+      }
     }
   }
 }

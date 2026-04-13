@@ -32,11 +32,11 @@ struct Cli {
   benchmark: String,
 
   /// Shows request statistics
-  #[arg(short = 's', long = "stats", conflicts_with = "compare")]
+  #[arg(short = 's', long = "stats")]
   stats: bool,
 
   /// Sets a report file
-  #[arg(short = 'r', long = "report", conflicts_with = "compare")]
+  #[arg(short = 'r', long = "report")]
   report: Option<String>,
 
   /// Subcommand to execute

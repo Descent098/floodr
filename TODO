@@ -3,11 +3,16 @@
     - [x] Add color theme
 - [ ] Modernize
     - [x] Remove `--benchmark` flag and make it an optional position param
+    - [ ] Remove `--verbose`
     - [ ] Update dependencies
         - [x] Update easy wins
         - [ ] Fix incompatabilities
             - [x] Clap v4
             - [ ] rand 0.10
+    - [ ] Add TUI
+        - [ ] https://github.com/vyfor/rattles
+        - [ ] https://ratatui.rs/
+            - [ ] https://github.com/ratatui/ratatui
     - [ ] CI/CD
         - [ ] Update existing workflows
         - [ ] Fix release workflow to automate platform builds
@@ -69,11 +74,11 @@
                 - [ ] file
                 - [ ] hex
                 - [ ] 
-            - [ ] Assignments
-                - [ ] Assign
-                - [ ] Manually assign values with `key`, `value`
-                - [ ] Use assigned values from response (i.e. `foo.status`)
-                - [ ] Using assigned values
+            - [x] Assignments
+                - [x] Assign
+                - [x] Manually assign values with `key`, `value`
+                - [x] Use assigned values from response (i.e. `foo.status`)
+                - [x] Using assigned values
             - [ ] Items
                 - [ ] Normal Items (`with_items`)
                     - [ ] int
@@ -86,7 +91,7 @@
                 - [ ] csv-driven `with_items_from_csv`
                     - [ ] file_name
                     - [ ] quote_char
-            - [ ] Exec (CURRENTLY BROKEN)
+            - [x] Exec (CURRENTLY BROKEN)
             - [ ] Cookies
         - [ ] Tags
         - [ ] Include
@@ -175,6 +180,6 @@
             - [x] Public any useful functions
             - [x] Finalize inline docs
             - [x] Add user docs
-    - [ ] Refactor root files into `engine` and `parsing` modules
+    - [x] Refactor root files into `engine` and `parsing` modules
     - [ ] Document overall usage as a library
 
