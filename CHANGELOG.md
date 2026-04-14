@@ -37,6 +37,7 @@ The first release of floodr after converting it from drill. The focus for this r
     - Actions now run with `bash` by default on \*nix, `zsh` on macOS and `powershell` on windows. Each will use `-c` with the passed in command as a string, and fail when command returns error status
     - Added new `--exec-terminal` flag to allow running commands with specified terminal (note `-c "<exec command>"` is passed, make sure your terminal/language supports this)
 - Delay actions now take `milliseconds` by default instead of `seconds`. If you specify `seconds` it's converted to `miliseconds`. If both are specified `milliseconds` takes precendence
+- Added a debug log when failing to access context that includes the full context
 
 ## Docs
 

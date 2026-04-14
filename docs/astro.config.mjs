@@ -35,14 +35,18 @@ export default defineConfig({
             starlightUiTweaks({
                 navbarLinks: [
                     { 
-                        label: "Getting Started", 
+                        label: "Quick-start", 
                         href: "/floodr/getting-started" 
+                    },
+                    { 
+                        label: "Syntax", 
+                        href: "/floodr/benchmark-reference" 
                     },
                     { 
                         label: "CLI", 
                         href: "/floodr/cli" 
                     },
-                    { label: "API reference", href: "/floodr/api-ref/floodr/" },
+                    { label: "API", href: "/floodr/api-ref/floodr/" },
                 ],
             }),
             // Enables swiping in the menu from the side on moble

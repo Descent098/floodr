@@ -98,14 +98,14 @@ impl Cli {
 
     if self.list_tags {
       tags::list_benchmark_file_tags(&self.benchmark);
-      process::exit(0);
+      return process::ExitCode::SUCCESS;
     }
 
     let tags = tags::Tags::new(self.tags.as_deref(), self.skip_tags.as_deref());
 
     if self.list_tasks {
       tags::list_benchmark_file_tasks(&self.benchmark, &tags);
-      process::exit(0);
+      return process::ExitCode::SUCCESS;
     }
 
     let mut base_override = None;

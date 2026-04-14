@@ -35,6 +35,10 @@ There are at least 2 major concerns because of this:
 2. You can run a command that causes a DOS, or gives misleading timings. If you run a heavy command, such as feeding the output into another program to run as it's running, you can end up with delays you weren't expecting for a run. For example if you are parsing a large JSON file with [`jq`](https://jqlang.org/) with concurrency at 50, you are essentially running 50 copies of heavy text parsing simultaneously
 </Aside>
 
+## Exposed Values
+
+When [assigning](/floodr/benchmark-reference/actions/assign) you can use the assigned variable name to access the `stdout` from the command. See [this example below](#using-output-of-other-commands) for details
+
 ## Examples
 
 Below are examples of how to use the feature

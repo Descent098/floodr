@@ -9,24 +9,6 @@
         - [ ] Fix incompatabilities
             - [x] Clap v4
             - [ ] rand 0.10
-    - [ ] Add TUI
-        - [ ] https://github.com/vyfor/rattles
-        - [ ] https://ratatui.rs/
-            - [ ] https://github.com/ratatui/ratatui
-    - [ ] CI/CD
-        - [ ] Fix clippy suggestions `cargo clippy -- -D warnings`
-        - [ ] Update existing workflows
-        - [ ] Fix release workflow to automate platform builds
-            - [ ] windows
-                - [ ] windows x86
-                - [ ] windows arm
-            - [ ] Linux
-                - [ ] linux x86
-                - [ ] linux arm
-                - [ ] muscl variants (is this necessary?)
-            - [ ] MacOS
-                - [ ] darwin x86
-                - [ ] darwin arm
         - [ ] Docs stuff (below)
         - [x] Add templates
             - [x] PR template
@@ -47,15 +29,6 @@
                     - [x] Library changes
                     - [x] Are you willing (or in progress) to submit a PR?
     - [x] Fix exec actions
-    - [ ] Fix issues when running back-to-back tests
-    - [ ] Clean up examples
-        - [ ] swap to gotham so people don't need node to run them
-        - [ ] Add other relevant examples as I go
-    - [ ] Clean up panics 
-        - [ ] https://doc.rust-lang.org/book/ch09-03-to-panic-or-not-to-panic.html
-        - [ ] Should the system panic as much as it does?
-            - [ ] it currently panics in `assert.rs` when a panic runs, but this should probably? be an exit. I'm just not sure how to stack-unwind properly if I don't panic here, or what the implications are
-            - [ ] If the functions panic then there use as a library are much more fragile
 - [ ] User Documentation
     - [ ] Create better documentation site
         - [ ] Port starlight improvements from https://github.com/Descent098/components
@@ -94,11 +67,11 @@
                     - [ ] quote_char
             - [x] Exec (CURRENTLY BROKEN)
             - [ ] Cookies
-        - [ ] Tags
-        - [ ] Include
+        - [x] Tags
+        - [x] Include
         - [ ] CLI Docs
-            - [ ] Relaxed interpolation
-                - [ ] Returns empty strings on invalid entries instead of panics (not recommended) (enables misspellings to go unnoticed)
+            - [x] Relaxed interpolation
+                - [x] Returns empty strings on invalid entries instead of panics (not recommended) (enables misspellings to go unnoticed)
             - [ ] Include links to docs for any confusing settings
         - [ ] Update `README.md` with new docs
             - [ ] Include FAQ
@@ -109,6 +82,15 @@
         - [x] Build cargo site and move under `/api-reference`
         - [ ] Confirm it works. I have to wait until I merge the branch into `main` since I apparently can't run my branches until then
 - [ ] Library conversion; Currently you can't really use `floodr` as a lib, this should be more open so people can program behaviour if they want to
+    - [ ] Convert config to use `::from()` pattern
+        - [ ] `::from_file()`
+        - [ ] `::from_plan()`
+        - [ ] `::from_file_contents()`
+    - [ ] Redo docstring examples
+        - [x] Engine
+        - [ ] Expandable
+        - [ ] Parsing
+        - [ ] Actions
     - [x] Review modules to decide which should be public (in `lib.rs`)
         - [x] actions (already public)
             - [x] `assert.rs`
@@ -183,4 +165,30 @@
             - [x] Add user docs
     - [x] Refactor root files into `engine` and `parsing` modules
     - [x] Document overall usage as a library (covered by docstrings)
-
+    - [ ] Fix issues when running back-to-back tests
+    - [ ] Clean up panics 
+        - [ ] https://doc.rust-lang.org/book/ch09-03-to-panic-or-not-to-panic.html
+        - [ ] Should the system panic as much as it does?
+            - [ ] it currently panics in `assert.rs` when a panic runs, but this should probably? be an exit. I'm just not sure how to stack-unwind properly if I don't panic here, or what the implications are
+            - [ ] If the functions panic then there use as a library are much more fragile
+    - [ ] Add TUI
+        - [ ] https://github.com/vyfor/rattles
+        - [ ] https://ratatui.rs/
+            - [ ] https://github.com/ratatui/ratatui
+    - [ ] CI/CD
+        - [ ] Fix clippy suggestions `cargo clippy -- -D warnings`
+        - [ ] Update existing workflows
+        - [ ] Fix release workflow to automate platform builds
+            - [ ] windows
+                - [ ] windows x86
+                - [ ] windows arm
+            - [ ] Linux
+                - [ ] linux x86
+                - [ ] linux arm
+                - [ ] muscl variants (is this necessary?)
+            - [ ] MacOS
+                - [ ] darwin x86
+                - [ ] darwin arm
+    - [ ] Clean up examples
+        - [ ] swap to gotham so people don't need node to run them
+        - [ ] Add other relevant examples as I go

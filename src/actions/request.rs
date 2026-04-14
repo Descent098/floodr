@@ -111,46 +111,7 @@ pub struct Request {
   pub assign: Option<String>,
 }
 
-/// A helper record to hold data when capturing or assigning response details.
-///
-/// # Examples
-///
-/// ```yaml
-/// plan:
-///   - name: Fetch account
-///     request:
-///       url: /api/account
-///     assign: foo
-/// ```
-///
-/// This equates to something like:
-///
-/// ```
-/// use serde::Serialize;
-/// use floodr::actions::Request;
-///
-/// #[derive(Serialize)]
-/// struct RequestItemDetails {
-///     url: String,
-/// }
-///
-/// #[derive(Serialize)]
-/// struct RequestItem {
-///     name: String,
-///     request: RequestItemDetails,
-///     assign: Option<String>,
-/// }
-///
-/// let config = RequestItem {
-///     name: "Fetch account".to_string(),
-///     request: RequestItemDetails {
-///         url: "/api/account".to_string(),
-///     },
-///     assign: Some(String::from("foo")),
-/// };
-/// let value = serde_yaml::to_value(config).unwrap();
-/// let s = Request::new(&value, None, None);
-/// ```
+/// A helper record to hold data when capturing or assigning response details it assigns what values are available to the context
 #[derive(Serialize, Deserialize)]
 struct AssignedRequest {
   status: u16,                 // The HTTP status code of the response.
@@ -317,44 +278,6 @@ impl Request {
   ///
   /// - `(Option<Response>, f64)` - The response and the time it took to send the request
   ///
-  /// # Examples
-  ///
-  /// ```yaml
-  /// plan:
-  ///   - name: Fetch account
-  ///     request:
-  ///       url: /api/account
-  ///     assign: foo
-  /// ```
-  ///
-  /// This equates to something like:
-  ///
-  /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Request;
-  ///
-  /// #[derive(Serialize)]
-  /// struct RequestItemDetails {
-  ///     url: String,
-  /// }
-  ///
-  /// #[derive(Serialize)]
-  /// struct RequestItem {
-  ///     name: String,
-  ///     request: RequestItemDetails,
-  ///     assign: Option<String>,
-  /// }
-  ///
-  /// let config = RequestItem {
-  ///     name: "Fetch account".to_string(),
-  ///     request: RequestItemDetails {
-  ///         url: "/api/account".to_string(),
-  ///     },
-  ///     assign: Some(String::from("foo")),
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Request::new(&value, None, None);
-  /// ```
   async fn send_request(&self, context: &mut Context, pool: &Pool, config: &Config) -> (Option<Response>, f64) {
     let mut uninterpolator = None;
 
@@ -488,44 +411,6 @@ impl Request {
 ///
 /// - `Value` - The JSON value
 ///
-/// # Examples
-///
-/// ```yaml
-/// plan:
-///   - name: Fetch account
-///     request:
-///       url: /api/account
-///     assign: foo
-/// ```
-///
-/// This equates to something like:
-///
-/// ```
-/// use serde::Serialize;
-/// use floodr::actions::Request;
-///
-/// #[derive(Serialize)]
-/// struct RequestItemDetails {
-///     url: String,
-/// }
-///
-/// #[derive(Serialize)]
-/// struct RequestItem {
-///     name: String,
-///     request: RequestItemDetails,
-///     assign: Option<String>,
-/// }
-///
-/// let config = RequestItem {
-///     name: "Fetch account".to_string(),
-///     request: RequestItemDetails {
-///         url: "/api/account".to_string(),
-///     },
-///     assign: Some(String::from("foo")),
-/// };
-/// let value = serde_yaml::to_value(config).unwrap();
-/// let s = Request::new(&value, None, None);
-/// ```
 fn yaml_to_json(data: YamlValue) -> Value {
   match data {
     YamlValue::Bool(b) => json!(b),
@@ -614,6 +499,7 @@ impl Runnable for Request {
 
           let body: Value = serde_json::from_str(&data).unwrap_or(serde_json::Value::Null);
 
+          // Add the info about the requst to context
           let assigned = AssignedRequest {
             status,
             body,

@@ -2,6 +2,24 @@
 //!
 //! Resolves variable placeholders (`{{ var }}`) using values from the
 //! context maps, environment variables, or other configurations.
+//! 
+//! # Example
+//! 
+//! ```rust
+//! use floodr::parsing::interpolator::Interpolator;
+//! use floodr::engine::benchmark::Context;
+//! use serde_json::Value;
+//! 
+//! let data = r#"{"url": "http://localhost:4896/", "status":200 }"#;
+//! let json_data: Value = serde_json::from_str(data).expect("Failed to parse");
+//!
+//! let mut ctx:Context = Context::new();
+//!
+//! ctx.insert("gotham".to_string(), json_data);
+//! let interpolator:Interpolator = Interpolator::new(&ctx);
+//!
+//! println!("{}", interpolator.resolve("The gotham object has\n\turl: {{gotham.url}}\n\tstatus: {{gotham.status}}",true));
+//! ```
 
 use colored::*;
 use lazy_static::lazy_static;
@@ -39,6 +57,24 @@ impl<'a> Interpolator<'a> {
   /// # Returns
   ///
   /// - `Interpolator<'a>` - A new `Interpolator` instance.
+  /// 
+  /// # Example
+  /// 
+  /// ```rust
+  /// use floodr::parsing::interpolator::Interpolator;
+  /// use floodr::engine::benchmark::Context;
+  /// use serde_json::Value;
+  /// 
+  /// let data = r#"{"url": "http://localhost:4896/", "status":200 }"#;
+  /// let json_data: Value = serde_json::from_str(data).expect("Failed to parse");
+  ///
+  /// let mut ctx:Context = Context::new();
+  ///
+  /// ctx.insert("gotham".to_string(), json_data);
+  /// let interpolator:Interpolator = Interpolator::new(&ctx);
+  ///
+  /// println!("{}", interpolator.resolve("The gotham object has\n\turl: {{gotham.url}}\n\tstatus: {{gotham.status}}",true));
+  /// ```
   pub fn new(context: &'a Context) -> Interpolator<'a> {
     Interpolator {
       context,
@@ -62,8 +98,20 @@ impl<'a> Interpolator<'a> {
   ///
   /// # Examples
   ///
-  /// ```rust,ignore
-  /// let resolved = interpolator.resolve("Hello {{ name }}", true);
+  /// ```rust
+  /// use floodr::parsing::interpolator::Interpolator;
+  /// use floodr::engine::benchmark::Context;
+  /// use serde_json::Value;
+  /// 
+  /// let data = r#"{"url": "http://localhost:4896/", "status":200 }"#;
+  /// let json_data: Value = serde_json::from_str(data).expect("Failed to parse");
+  ///
+  /// let mut ctx:Context = Context::new();
+  ///
+  /// ctx.insert("gotham".to_string(), json_data);
+  /// let interpolator:Interpolator = Interpolator::new(&ctx);
+  ///
+  /// println!("{}", interpolator.resolve("The gotham object has\n\turl: {{gotham.url}}\n\tstatus: {{gotham.status}}",true));
   /// ```
   pub fn resolve(&self, url: &str, strict: bool) -> String {
     INTERPOLATION_REGEX

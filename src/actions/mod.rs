@@ -34,64 +34,7 @@
 //!
 //! Would result in a struct for the corresponding action being created and added to the `floodr::benchmark::Context` struct. In this case a `Request` struct and an `Assert` struct would be created and added to the `Context` struct.
 //!
-//! ```rust,ignore
-//! use serde::Serialize;
-//! use floodr::actions::{Assert, Request, Runnable};
-//!
-//! #[derive(Serialize)]
-//! struct RequestItemDetails {
-//!     url: String,
-//! }
-//!
-//! #[derive(Serialize)]
-//! struct RequestItem {
-//!     name: String,
-//!     request: RequestItemDetails,
-//! }
-//!
-//! let req_item = RequestItem {
-//!     name: "Fetch account".to_string(),
-//!     request: RequestItemDetails {
-//!         url: "/api/account".to_string(),
-//!     },
-//! };
-//! let request_value = serde_yaml::to_value(req_item).unwrap();
-//! let request = Request::new(&request_value, None, None);
-//! request.execute(
-//!     &mut context:floodr::benchmark::Context,
-//!     &mut reports:floodr::benchmark::Reports,
-//!     &pool:floodr::benchmark::Pool,
-//!     &config:floodr::config::Config
-//! ).await;
-//!
-//! #[derive(Serialize)]
-//! struct AssertItemDetails {
-//!     key: String,
-//!     value: String,
-//! }
-//!
-//! #[derive(Serialize)]
-//! struct AssertItem {
-//!     name: String,
-//!     assert: AssertItemDetails,
-//! }
-//!
-//! let assert_item = AssertItem {
-//!     name: "Assert request response code".to_string(),
-//!     assert: AssertItemDetails {
-//!         key: "foo.status".to_string(),
-//!         value: "200".to_string(),
-//!     },
-//! };
-//! let value = serde_yaml::to_value(assert_item).unwrap();
-//!
-//! let action = Assert::new(&value, None);
-//! action.execute(
-//!     &mut context:floodr::benchmark::Context,
-//!     &mut reports:floodr::benchmark::Reports,
-//!     &pool:floodr::benchmark::Pool,
-//!     &config:floodr::config::Config
-//! ).await;
+//! ```rust
 //! ```
 use async_trait::async_trait;
 use serde_yaml::Value;

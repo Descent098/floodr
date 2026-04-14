@@ -1,5 +1,231 @@
 ---
-title: Multi-file tests (TODO)
+title: Multi-file tests
 ---
+import { Aside, Code } from '@astrojs/starlight/components';
+
+Floodr includes the abilty to split up your benchmark definition into multiple files. 
 
 
+
+## Examples
+
+Below are examples of how to use the feature
+
+### Simple Case
+
+Imagine you want to have a main benchmark file, and then a `requests.yml` to define your requests:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: http://localhost:4896
+
+plan:
+  - name: Grab and run Subfile
+    include: requests.yml
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham-redirect-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_empty_response;
+use gotham::hyper::{Body, Response, StatusCode, Uri};
+use gotham::router::builder::*;
+use gotham::router::Router;
+use gotham::state::State;
+
+fn redirect_latest(state: State) -> (State, Response<Body>) {
+    let response = Response::builder()
+        .status(StatusCode::FOUND) // 302
+        .header("Location", "/api/v3")
+        .body(Body::empty())
+        .unwrap();
+
+    (state, response)
+}
+
+fn api_v3(state: State) -> (State, Response<Body>) {
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(Body::empty())
+        .unwrap();
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/api/latest").to(redirect_latest);
+        route.get("/api/v3").to(api_v3);
+    })
+}
+
+pub fn main() {
+    println!("Listening on http://127.0.0.1:4896");
+    gotham::start("127.0.0.1:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+<Code title="requests.yml" lang="yaml" code={`- name: Fetch
+  request:
+    url: /
+`}/>
+
+<Aside type="caution">Sub-files can **only** contain actions. They should be defined at the top-level</Aside>
+
+Essentially the include statement is replaced with appending the contents of the file. So, you can imagine the "new" benchmark file essentially being:
+
+<Code title="newbenchmark.yml" lang="yaml" code={`base: http://localhost:4896
+
+plan:
+    - name: Fetch
+      request:
+        url: /
+`}/>
+
+
+You can then run the `benchmark.yml` file, and it will run the requests from `requests.yml`
+
+```bash
+$>floodr
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch                     http://localhost:4896/ 200 OK 308m
+```
+
+
+### Using Values defined in other file
+
+When bringing in a new file you can include an assignment which will become part of the total context. So, for example with:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: http://localhost:4896
+
+plan:
+  - name: Grab and run subfile
+    include: requests.yml
+  - name: delay test
+    delay:
+      milliseconds: 3000
+  - name: Assert x-backend header is gotham
+    assert:
+      key: query.headers["x-backend"]
+      value: gotham
+  - name: Assert URL
+    assert:
+      key: query.url
+      value: http://localhost:4896/
+  - name: Assert version is http 1.1
+    assert:
+      key: query.version
+      value: http/1.1
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham-redirect-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_empty_response;
+use gotham::hyper::{Body, Response, StatusCode, Uri};
+use gotham::router::builder::*;
+use gotham::router::Router;
+use gotham::state::State;
+
+fn redirect_latest(state: State) -> (State, Response<Body>) {
+    let response = Response::builder()
+        .status(StatusCode::FOUND) // 302
+        .header("Location", "/api/v3")
+        .body(Body::empty())
+        .unwrap();
+
+    (state, response)
+}
+
+fn api_v3(state: State) -> (State, Response<Body>) {
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(Body::empty())
+        .unwrap();
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/api/latest").to(redirect_latest);
+        route.get("/api/v3").to(api_v3);
+    })
+}
+
+pub fn main() {
+    println!("Listening on http://127.0.0.1:4896");
+    gotham::start("127.0.0.1:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+<Code title="requests.yml" lang="yaml" code={`- name: Fetch
+  request:
+    url: /
+`}/>
+
+We get:
+
+```bash
+$>floodr
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch                     http://localhost:4896/ 200 OK 319ms
+delay test                3s
+Assert x-backend header is gotham query.headers["x-backend"]=gotham?
+Assert URL                query.url=http://localhost:4896/?
+Assert version is http 1.1 query.version=http/1.1
+```

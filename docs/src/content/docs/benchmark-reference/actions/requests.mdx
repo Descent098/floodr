@@ -3,11 +3,44 @@ title: Requests (TODO)
 sidebar:
   order: 2
 ---
+import { Code, Aside } from '@astrojs/starlight/components';
+
+## Exposed values
+
+When [assigning](/floodr/benchmark-reference/actions/assign) the following values are available:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| status | `Number` | The HTTP status code |
+| body | `Value` | The contents of the body (if they exist) | 
+| headers | `Map<String, Value>` | A mapping of the available headers, for example `{request.headers["server"]}` |
+| url | `String` | The retrieved url | 
+| version | `String` | The HTTP version (e.g. `http/1.1`) | 
+
+
+
+<Aside type={`note`}>The `Value` type is a mapping of any valid JSON value (i.e. `Bool`, `Number`, `String`,`Array` or `Object`) as deserialized by [`serde_json::from_str`](https://docs.rs/serde_json/latest/serde_json/fn.from_str.html). For most requests it typically coerced into a `String`, but this is not always true</Aside>
+
 
 
 ## Examples
 
 Below are examples of how to use the feature
 
+### Setting The Method (TODO)
+
+
+
+### Custom Headers (TODO)
 
 ### Cookies (TODO)
+
+### Requests with Body values (TODO)
+
+#### String (TODO)
+
+#### Files (TODO)
+
+#### Hex (TODO)
+
+

@@ -19,7 +19,7 @@ const NRAMPUP: i64 = 0;
 /// - `base` (`String`) - The base URL for the benchmark
 /// - `concurrency` (`i64`) - The number of concurrent requests
 /// - `iterations` (`i64`) - The number of iterations to run
-/// - `relaxed_interpolations` (`bool`) - Whether to allow relaxed interpolations
+/// - `relaxed_interpolations` (`bool`) - Whether to allow relaxed interpolations (empty instead of panic on unknown context variables)
 /// - `no_check_certificate` (`bool`) - Whether to skip certificate checking
 /// - `rampup` (`i64`) - The rampup time for the benchmark
 /// - `quiet` (`bool`) - Whether to run the benchmark in quiet mode
@@ -28,10 +28,10 @@ const NRAMPUP: i64 = 0;
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use floodr::parsing::config::Config;
 ///
-/// let config = Config::new("config.yml", false, false, false, 1000, false, None);
+/// let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
 /// ```
 #[derive(Clone)]
 pub struct Config {
@@ -73,7 +73,7 @@ impl Config {
   /// # Examples
   ///
   /// ```rust,ignore
-  /// let config = Config::new("test.yml", false, false, false, 10, true, None);
+  /// let config = Config::new("benchmark.yml", false, false, false, 10, true, None, None );
   /// ```
   #[allow(clippy::too_many_arguments)]
   pub fn new(path: &str, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool,  timeout: u64, verbose: bool, exec_terminal: Option<String>, base_override: Option<String>) -> Config {

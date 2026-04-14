@@ -2,7 +2,61 @@
 //!
 //! Handles running the full benchmark iteratively or concurrently, parsing tests,
 //! creating HTTP connections, gathering stats, and writing reports.
-
+//! 
+//! ## Example
+//! 
+//! ### Execute from file
+//! 
+//! ```rust,ignore
+//! use floodr::parsing::config::Config;
+//! use floodr::engine::benchmark;
+//! 
+//! let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
+//! let tags = &Tags::new(None, None);
+//! 
+//! benchmark::execute(
+//!     "benchmark.yml".as_ref(), 
+//!     None, 
+//!     false, 
+//!     config.no_check_certificate, 
+//!     config.quiet, 
+//!     Some(&config.timeout.to_string()), 
+//!     config.verbose, 
+//!     config.exec_terminal.as_deref(), 
+//!     &tags, 
+//!     None
+//! );
+//! ```
+//! 
+//! ### Manually Parse and execute plan with no Concurrency
+//! 
+//! ```rust, ignore
+//! use floodr::parsing::config::Config;
+//! use floodr::engine::benchmark;
+//! use serde_yaml;
+//! 
+//! let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
+//! 
+//! let plan_data = r#"
+//! - name: Fetch account
+//!   request:
+//!     url: /"#;
+//!     
+//! let plan_items = serde_yaml::from_str(plan_data).expect("Failed to parse");
+//! println!("{:#?}", plan_items);
+//!
+//! let benchmark_plan = floodr::parsing::comparison_loader::load_from_items(plan_items);
+//! benchmark::execute_from_plan(
+//!     benchmark_plan,
+//!     "http://localhost:4896".to_string(),
+//!     config.relaxed_interpolations,
+//!     config.no_check_certificate, 
+//!     config.quiet,
+//!     config.timeout,
+//!     config.verbose,
+//!     config.exec_terminal
+//! );
+//! ```
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -116,8 +170,24 @@ async fn run_iteration(benchmark: Arc<Benchmark>, pool: Pool, config: Arc<Config
 /// # Examples
 ///
 /// ```rust,ignore
-/// use floodr::parsing::tags::Tags;
-/// let result = execute("test.yml", None, false, false, false, false, Some("10"), true, None, &Tags::new(None, None));
+/// use floodr::parsing::config::Config;
+/// use floodr::engine::benchmark;
+/// 
+/// let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
+/// let tags = &Tags::new(None, None);
+/// 
+/// benchmark::execute(
+///     "benchmark.yml".as_ref(), 
+///     None, 
+///     false, 
+///     config.no_check_certificate, 
+///     config.quiet, 
+///     Some(&config.timeout.to_string()), 
+///     config.verbose, 
+///     config.exec_terminal.as_deref(), 
+///     &tags, 
+///     None
+/// );
 /// ```
 #[allow(clippy::too_many_arguments)]
 pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: Option<&str>, verbose: bool, exec_terminal: Option<&str>, tags: &Tags, base_override: Option<String>) -> BenchmarkResult {
@@ -199,6 +269,36 @@ pub fn execute(benchmark_path: &str, report_path_option: Option<&str>, relaxed_i
 /// # Returns
 ///
 /// - `BenchmarkResult` - The results and duration of the run.
+/// 
+/// # Example
+/// 
+/// ```rust, ignore
+/// use floodr::parsing::config::Config;
+/// use floodr::engine::benchmark;
+/// use serde_yaml;
+/// 
+/// let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
+/// 
+/// let plan_data = r#"
+/// - name: Fetch account
+///   request:
+///     url: /"#;
+///     
+/// let plan_items = serde_yaml::from_str(plan_data).expect("Failed to parse");
+/// println!("{:#?}", plan_items);
+///
+/// let benchmark_plan = floodr::parsing::comparison_loader::load_from_items(plan_items);
+/// benchmark::execute_from_plan(
+///     benchmark_plan,
+///     "http://localhost:4896".to_string(),
+///     config.relaxed_interpolations,
+///     config.no_check_certificate, 
+///     config.quiet,
+///     config.timeout,
+///     config.verbose,
+///     config.exec_terminal
+/// );
+/// ```
 #[allow(clippy::too_many_arguments)]
 pub fn execute_from_plan(benchmark: Benchmark, base: String, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool, timeout: u64, verbose: bool, exec_terminal: Option<String>) -> BenchmarkResult {
   let config = Arc::new(Config {

@@ -1,22 +1,9 @@
 ---
 title: Assignment
 ---
-
 import { Code, Aside } from '@astrojs/starlight/components';
 
-Floodr features an interpolation engine that will allow you to query data about responses. Assignment will expose the following fields from the response to a [`Request`](/floodr/benchmark-reference/actions/requests):
-
-| Field | Type | Description |
-|-------|------|-------------|
-| status | `Number` | The HTTP status code |
-| body | `Value` | The contents of the body (if they exist) | 
-| headers | `Map<String, Value>` | A mapping of the available headers, for example `{request.headers["server"]}` |
-| url | `String` | The retrieved url | 
-| version | `String` | The HTTP version (e.g. `http/1.1`) | 
-
-<Aside type={`note`}>The `Value` type is a mapping of any valid JSON value (i.e. `Bool`, `Number`, `String`,`Array` or `Object`) as deserialized by [`serde_json::from_str`](https://docs.rs/serde_json/latest/serde_json/fn.from_str.html). For most requests it typically coerced into a `String`, but this is not always true</Aside>
-
-Under the hood this uses the interpolation engine to stuff values into a struct based on the action type. Requests for example are stoerd as a `floodr::actions::AssignedRequest;` struct. 
+Floodr features an interpolation engine that will allow you to query data about responses. Assignment will expose different fields based on action type. For details about fields available check the action type's documentation page. Under the hood this uses the interpolation engine to stuff values into a context struct that you are accessing.
 
 <Aside type={"danger"}>
 It's important to note that actions run **sequentially**, meaning the order you define them in is relevent to their execution. This means assignments **must** happen before the variables are used.
@@ -24,6 +11,9 @@ It's important to note that actions run **sequentially**, meaning the order you 
 
 
 ## Examples
+Below are examples of how to use the feature
+
+### Simple example 
 
 For example, if you're testing redirects, and you want to assert that the response is a 301 you could setup a YAML file with:
 
@@ -119,3 +109,74 @@ plan:
     assert:
       key: latestRedirect.url
       value: http://localhost:4896/api/v3`}/>
+
+
+### Manual Assignment
+
+You can also use an action to directly assign a value:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Assign value manually
+    assign:
+      key: ran
+      value: yep
+  - name: Checking manual assertion
+    assert:
+      key: ran
+      value: yep`}/>
+
+```bash
+$>floodr
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Assign value manually     ran=yep
+Checking manual assertion ran=yep?
+```
+
+## Troubleshooting
+
+If running into an issue where the systems says there is an unknown variable, the whole context will be dumped. For example consider this file where we forgot to assign the variable correctly:
+
+<Code title="benchmark.yml" lang="yaml" mark={["key: ren", "key: ran"]} code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Assign value manually
+    assign:
+      key: ren
+      value: yep
+  - name: Checking manual assertion
+    assert:
+      key: ran
+      value: yep`}/>
+
+When we run 
+
+
+```bash
+$>floodr
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Assign value manually     ren=yep
+Checking assertion        ran=yep?
+
+Unknown 'ran' variable!
+Context: {
+    "base": String("http://localhost:4896"),
+    "iteration": String("0"),
+    "ren": String("yep"),
+}
+
+thread 'main' (64096) panicked at src\\parsing\\interpolator.rs:85:11:
+Unknown 'ran' variable!
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+```
+
+We can see from the dumped information that `"ren"` is a `String` but `ran` does not exist in the context
