@@ -4,15 +4,47 @@
 //! Each row in the CSV is used as an 'item' for interpolation in the request.
 //!
 //! # Examples
-//!
+//! With the files:
+//! 
+//! `single_request.yml`
 //! ```yaml
+//! 
+//! # An example of a simple single request
+//! base: http://localhost:4896
+//! 
 //! plan:
-//!   - name: Fetch users
-//!     request:
-//!       url: /api/users/{{ item.id }}
-//!     with_items_from_csv: users.csv
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
 //! ```
-
+//! 
+//! and `users.csv`
+//! 
+//! ```csv
+//! id,name
+//! 2,John
+//! 3,Mary
+//! ```
+//! 
+//! We can do
+//!
+//! ```rust
+//! use floodr::engine::benchmark::Benchmark;
+//! use floodr::expandable::multi_csv_request;
+//! use serde_yaml::Value;
+//!
+//! let mut benchmark = Benchmark::new();
+//! 
+//! let item = serde_yaml::from_str("
+//! name: Fetch users
+//! request:
+//!   url: /api/users/{{ item.id }}
+//! with_items_from_csv: fixtures/users.csv
+//! ").unwrap();
+//! 
+//! multi_csv_request::expand("example/single_request.yml", &item, &mut benchmark);
+//! ```
 use rand::seq::SliceRandom;
 use serde_yaml::Value;
 use std::path::Path;
@@ -35,7 +67,7 @@ use crate::parsing::reader;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
 /// use serde_yaml::Value;
 /// use floodr::expandable::multi_csv_request;
 ///
@@ -64,20 +96,47 @@ pub fn is_that_you(item: &Value) -> bool {
 /// - Panics if `with_items_from_csv` is not correctly specified
 ///
 /// # Examples
+/// 
+/// With the files:
+/// 
+/// `single_request.yml`
+/// ```yaml
+/// 
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// and `users.csv`
+/// 
+/// ```csv
+/// id,name
+/// 2,John
+/// 3,Mary
+/// ```
+/// 
+/// We can do
 ///
-/// ```rust,ignore
-/// use floodr::benchmark::Benchmark;
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
 /// use floodr::expandable::multi_csv_request;
 /// use serde_yaml::Value;
 ///
 /// let mut benchmark = Benchmark::new();
+/// 
 /// let item = serde_yaml::from_str("
 /// name: Fetch users
 /// request:
 ///   url: /api/users/{{ item.id }}
-/// with_items_from_csv: users.csv
+/// with_items_from_csv: fixtures/users.csv
 /// ").unwrap();
-/// multi_csv_request::expand("benchmark.yml", &item, &mut benchmark);
+/// 
+/// multi_csv_request::expand("example/single_request.yml", &item, &mut benchmark);
 /// ```
 pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
   let (with_items_path, quote_char) = if let Some(with_items_path) = item.get("with_items_from_csv").and_then(|v| v.as_str()) {

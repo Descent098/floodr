@@ -5,12 +5,47 @@
 //!
 //! # Examples
 //!
+//! With the files:
+//! 
+//! `texts.txt`
+//! 
+//! ```text
+//! Lorem ipsum dolor sit amet.
+//! consetetur sadipscing elitr?
+//! sed diam nonumy eirmod tempor invidunt ut!
+//! ```
+//! 
+//! and
+//! `single_request.yml`
+//! 
 //! ```yaml
+//! 
+//! # An example of a simple single request
+//! base: http://localhost:4896
+//! 
 //! plan:
-//!   - name: Fetch from list
-//!     request:
-//!       url: /api/{{ item }}
-//!     with_items_from_file: list.txt
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
+//! ```
+//! We can do
+//!
+//! ```rust
+//! use floodr::engine::benchmark::Benchmark;
+//! use floodr::expandable::multi_file_request;
+//! use serde_yaml::Value;
+//!
+//! let mut benchmark = Benchmark::new();
+//! 
+//! let item = serde_yaml::from_str("
+//! name: Fetch from list
+//! request:
+//!   url: /api/{{ item }}
+//! with_items_from_file: fixtures/texts.txt
+//! ").unwrap();
+//! 
+//! multi_file_request::expand("example/single_request.yml", &item, &mut benchmark);
 //! ```
 
 use super::pick;
@@ -34,7 +69,7 @@ use std::path::Path;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
 /// use serde_yaml::Value;
 /// use floodr::expandable::multi_file_request;
 ///
@@ -61,21 +96,49 @@ pub fn is_that_you(item: &Value) -> bool {
 ///
 /// - Panics if the text file path contains interpolation markers `{{ ... }}`
 ///
-/// # Examples
+/// # Example
+/// 
+/// With the files:
+/// 
+/// `texts.txt`
+/// 
+/// ```text
+/// Lorem ipsum dolor sit amet.
+/// consetetur sadipscing elitr?
+/// sed diam nonumy eirmod tempor invidunt ut!
+/// ```
+/// 
+/// and
+/// `single_request.yml`
+/// 
+/// ```yaml
+/// 
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// We can do
 ///
-/// ```rust,ignore
-/// use floodr::benchmark::Benchmark;
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
 /// use floodr::expandable::multi_file_request;
 /// use serde_yaml::Value;
 ///
 /// let mut benchmark = Benchmark::new();
+/// 
 /// let item = serde_yaml::from_str("
 /// name: Fetch from list
 /// request:
 ///   url: /api/{{ item }}
-/// with_items_from_file: list.txt
+/// with_items_from_file: fixtures/texts.txt
 /// ").unwrap();
-/// multi_file_request::expand("benchmark.yml", &item, &mut benchmark);
+/// 
+/// multi_file_request::expand("example/single_request.yml", &item, &mut benchmark);
 /// ```
 pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
   let with_items_path = if let Some(with_items_path) = item.get("with_items_from_file").and_then(|v| v.as_str()) {

@@ -5,15 +5,22 @@
 //!
 //! # Examples
 //!
-//! ```yaml
-//! plan:
-//!   - name: Fetch items
-//!     request:
-//!       url: /api/{{ item }}
-//!     with_items:
-//!       - alpha
-//!       - beta
-//!       - gamma
+//! ```rust
+//! use floodr::engine::benchmark::Benchmark;
+//! use floodr::expandable::multi_request;
+//! use serde_yaml::Value;
+//!
+//! let mut benchmark = Benchmark::new();
+//! let item = serde_yaml::from_str("
+//! name: Fetch items
+//! request:
+//!   url: /api/{{ item }}
+//! with_items:
+//!   - a
+//!   - b
+//! ").unwrap();
+//! 
+//! multi_request::expand(&item, &mut benchmark);
 //! ```
 
 use rand::seq::SliceRandom;
@@ -36,7 +43,7 @@ use crate::parsing::interpolator::INTERPOLATION_REGEX;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
 /// use serde_yaml::Value;
 /// use floodr::expandable::multi_request;
 ///
@@ -47,6 +54,7 @@ use crate::parsing::interpolator::INTERPOLATION_REGEX;
 ///   - item1
 ///   - item2
 /// ").unwrap();
+/// 
 /// assert!(multi_request::is_that_you(&item));
 /// ```
 pub fn is_that_you(item: &Value) -> bool {
@@ -66,8 +74,8 @@ pub fn is_that_you(item: &Value) -> bool {
 ///
 /// # Examples
 ///
-/// ```rust,ignore
-/// use floodr::benchmark::Benchmark;
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
 /// use floodr::expandable::multi_request;
 /// use serde_yaml::Value;
 ///
@@ -80,6 +88,7 @@ pub fn is_that_you(item: &Value) -> bool {
 ///   - a
 ///   - b
 /// ").unwrap();
+/// 
 /// multi_request::expand(&item, &mut benchmark);
 /// ```
 pub fn expand(item: &Value, benchmark: &mut Benchmark) {

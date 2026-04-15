@@ -4,15 +4,23 @@
 //!
 //! # Examples
 //!
-//! ```yaml
-//! plan:
-//!   - name: Sequential requests
-//!     request:
-//!       url: /api/items/{{ item }}
-//!     with_items_range:
-//!       start: 1
-//!       stop: 10
-//!       step: 1
+//! ```rust
+//! use floodr::engine::benchmark::Benchmark;
+//! use floodr::expandable::multi_iter_request;
+//! use serde_yaml::Value;
+//!
+//! let mut benchmark = Benchmark::new();
+//! 
+//! let item = serde_yaml::from_str("
+//! name: Sequential requests
+//! request:
+//!   url: /api/items/{{ item }}
+//! with_items_range:
+//!   start: 1
+//!   stop: 10
+//! ").unwrap();
+//! 
+//! multi_iter_request::expand(&item, &mut benchmark);
 //! ```
 
 use std::convert::TryInto;
@@ -37,7 +45,7 @@ use crate::engine::benchmark::{ActionItem, Benchmark};
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
 /// use serde_yaml::Value;
 /// use floodr::expandable::multi_iter_request;
 ///
@@ -48,6 +56,7 @@ use crate::engine::benchmark::{ActionItem, Benchmark};
 ///   start: 1
 ///   stop: 5
 /// ").unwrap();
+/// 
 /// assert!(multi_iter_request::is_that_you(&item));
 /// ```
 pub fn is_that_you(item: &Value) -> bool {
@@ -69,12 +78,13 @@ pub fn is_that_you(item: &Value) -> bool {
 ///
 /// # Examples
 ///
-/// ```rust,ignore
-/// use floodr::benchmark::Benchmark;
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
 /// use floodr::expandable::multi_iter_request;
 /// use serde_yaml::Value;
 ///
 /// let mut benchmark = Benchmark::new();
+/// 
 /// let item = serde_yaml::from_str("
 /// name: Sequential requests
 /// request:
@@ -83,6 +93,7 @@ pub fn is_that_you(item: &Value) -> bool {
 ///   start: 1
 ///   stop: 10
 /// ").unwrap();
+/// 
 /// multi_iter_request::expand(&item, &mut benchmark);
 /// ```
 pub fn expand(item: &Value, benchmark: &mut Benchmark) {

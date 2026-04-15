@@ -5,10 +5,40 @@
 //!
 //! # Examples
 //!
+//! With the files
+//! 
+//!`single_request.yml`
 //! ```yaml
+//! # An example of a simple single request
+//! base: http://localhost:4896
+//! 
 //! plan:
-//!   - name: Include external plan
-//!     include: auth_steps.yml
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
+//! ```
+//! and
+//! 
+//! `subcomments.yml`
+//! 
+//! ```yaml
+//! - name: Fetch sub comments
+//!   request:
+//!     url: /api/subcomments.json
+//! ```
+//! 
+//! We can do:
+//! 
+//! ```rust
+//! use floodr::engine::benchmark::Benchmark;
+//! use floodr::parsing::tags::Tags;
+//! use floodr::expandable::include;
+//! use serde_yaml::Value;
+//!
+//! let mut benchmark = Benchmark::new();
+//! let item = serde_yaml::from_str("include: subcomments.yml").unwrap(); // This file is also in the /examples folder
+//! include::expand("example/single_request.yml", &item, &mut benchmark, &Tags::new(None, None));
 //! ```
 
 use serde_yaml::Value;
@@ -35,7 +65,7 @@ use crate::parsing::reader;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
 /// use serde_yaml::Value;
 /// use floodr::expandable::include;
 ///
@@ -60,16 +90,42 @@ pub fn is_that_you(item: &Value) -> bool {
 /// - Panics if the `include` path contains interpolation markers `{{ ... }}`
 ///
 /// # Examples
-///
-/// ```rust,ignore
-/// use floodr::benchmark::Benchmark;
-/// use floodr::tags::Tags;
+/// 
+/// With the files
+/// 
+/// `single_request.yml`
+/// 
+/// ```yaml
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// and
+/// 
+/// `subcomments.yml`
+/// 
+/// ```yaml
+/// - name: Fetch sub comments
+///   request:
+///     url: /api/subcomments.json
+/// ```
+/// 
+/// We can do:
+/// 
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
+/// use floodr::parsing::tags::Tags;
 /// use floodr::expandable::include;
 /// use serde_yaml::Value;
 ///
 /// let mut benchmark = Benchmark::new();
-/// let item = serde_yaml::from_str("include: tests.yml").unwrap();
-/// include::expand("benchmark.yml", &item, &mut benchmark, &Tags::new(None, None));
+/// let item = serde_yaml::from_str("include: subcomments.yml").unwrap(); // This file is also in the /examples folder
+/// include::expand("example/single_request.yml", &item, &mut benchmark, &Tags::new(None, None));
 /// ```
 pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark, tags: &Tags) {
   let include_path = item.get("include").and_then(|v| v.as_str()).unwrap();
@@ -100,14 +156,26 @@ pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark, tags: 
 /// - Panics if it encounters an unknown action type
 ///
 /// # Examples
+/// 
+/// With the file:
+/// 
+/// `subcomments.yml`
+/// 
+/// ```yaml
+/// - name: Fetch sub comments
+///   request:
+///     url: /api/subcomments.json
+/// ```
+/// 
+/// We can do
 ///
-/// ```rust,ignore
-/// use floodr::benchmark::Benchmark;
-/// use floodr::tags::Tags;
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
+/// use floodr::parsing::tags::Tags;
 /// use floodr::expandable::include;
 ///
 /// let mut benchmark = Benchmark::new();
-/// include::expand_from_filepath("auth.yml", &mut benchmark, None, &Tags::new(None, None));
+/// include::expand_from_filepath("example/subcomments.yml", &mut benchmark, None, &Tags::new(None, None));
 /// ```
 pub fn expand_from_filepath(parent_path: &str, benchmark: &mut Benchmark, accessor: Option<&str>, tags: &Tags) {
   let docs = reader::read_file_as_yml(parent_path);

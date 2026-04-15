@@ -25,13 +25,12 @@
 //! ```
 //!
 //! Would result in three `Request` actions being created and added to the benchmark.
-
 pub mod include;
 
-mod multi_csv_request;
-mod multi_file_request;
-mod multi_iter_request;
-mod multi_request;
+pub mod multi_csv_request;
+pub mod multi_file_request;
+pub mod multi_iter_request;
+pub mod multi_request;
 
 use serde_yaml::Value;
 
@@ -53,13 +52,14 @@ use serde_yaml::Value;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// ```rust
 /// use serde_yaml::Value;
 /// use floodr::expandable::pick;
 ///
 /// let item = serde_yaml::from_str("pick: 2").unwrap();
 /// let with_items = vec![Value::from(1), Value::from(2), Value::from(3)];
 /// let n = pick(&item, &with_items);
+/// 
 /// assert_eq!(n, 2);
 /// ```
 pub fn pick(item: &Value, with_items: &[Value]) -> usize {

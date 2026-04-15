@@ -82,15 +82,15 @@
         - [x] `::from_file()`
         - [x] `::from_plan()`
         - [x] `::from_file_contents()`
-    - [ ] Redo docstring examples
+    - [x] Redo docstring examples
         - [x] Engine
-        - [ ] Expandable
-            - [ ] include
-            - [ ] mod
-            - [ ] multi_csv_request
-            - [ ] multi_file_request
-            - [ ] multi_iter_request
-            - [ ] multi_request
+        - [x] Expandable
+            - [x] include
+            - [x] mod
+            - [x] multi_csv_request
+            - [x] multi_file_request
+            - [x] multi_iter_request
+            - [x] multi_request
         - [x] Parsing
             - [x] checker
             - [x] comparison_loader
@@ -220,3 +220,4 @@
     - [ ] Improve coverage with tarpaulin
         - [ ] `cargo tarpaulin --out Xml --ignore-tests`
         - [ ] `cargo tarpaulin --out Html --ignore-tests`
+    - [ ] Convert tests to using tempfiles
