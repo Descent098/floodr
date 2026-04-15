@@ -1,0 +1,161 @@
+name: Build (multi-target)
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  BUILD_MODE: release
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux (Zig builds)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            use_zig: true
+
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            use_zig: true
+
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            use_zig: true
+
+          # Windows (native MSVC)
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            use_zig: false
+
+          # macOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            use_zig: false
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            use_zig: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -----------------------------
+      # Setup Rust
+      # -----------------------------
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      # -----------------------------
+      # Cache
+      # -----------------------------
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      # -----------------------------
+      # Install Zig (Linux only)
+      # -----------------------------
+      - name: Install Zig
+        if: matrix.use_zig == true
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.12.0
+
+      # -----------------------------
+      # Install cargo tools
+      # -----------------------------
+      - name: Install cargo-zigbuild
+        if: matrix.use_zig == true
+        run: cargo install cargo-zigbuild
+
+      - name: Install cross
+        if: matrix.use_zig == false
+        run: cargo install cross
+
+      # -----------------------------
+      # Dependency warnings
+      # -----------------------------
+      - name: Check dependencies
+        shell: bash
+        run: |
+          echo "Checking for problematic dependencies..."
+
+          if grep -q "openssl" Cargo.toml; then
+            echo "::warning::openssl detected - may fail cross-compiling"
+          fi
+
+          if grep -q "ring" Cargo.toml; then
+            echo "::warning::ring detected - may fail on some targets"
+          fi
+
+          if grep -q "bindgen" Cargo.toml; then
+            echo "::warning::bindgen detected - requires clang/headers"
+          fi
+
+      # -----------------------------
+      # Build
+      # -----------------------------
+      - name: Build (zig)
+        if: matrix.use_zig == true
+        run: cargo zigbuild --target ${{ matrix.target }} --release
+
+      - name: Build (native/cross)
+        if: matrix.use_zig == false
+        run: |
+          # macOS builds natively
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            cargo build --target ${{ matrix.target }} --release
+          else
+            cross build --target ${{ matrix.target }} --release
+          fi
+
+      # -----------------------------
+      # Package
+      # -----------------------------
+      - name: Package artifact
+        shell: bash
+        run: |
+          set -e
+
+          TARGET=${{ matrix.target }}
+          BIN_NAME=$(basename $(pwd))
+
+          OUT_DIR=target/$TARGET/release
+          DIST=dist/$TARGET
+          mkdir -p $DIST
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            BIN="$OUT_DIR/$BIN_NAME.exe"
+          else
+            BIN="$OUT_DIR/$BIN_NAME"
+          fi
+
+          cp "$BIN" "$DIST/"
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cd dist
+            powershell Compress-Archive -Path $TARGET -DestinationPath $TARGET.zip
+          else
+            tar -czf dist/${TARGET}.tar.gz -C dist $TARGET
+          fi
+
+      # -----------------------------
+      # Upload artifacts
+      # -----------------------------
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            dist/${{ matrix.target }}.tar.gz
+            dist/${{ matrix.target }}.zip
+          if-no-files-found: ignore
