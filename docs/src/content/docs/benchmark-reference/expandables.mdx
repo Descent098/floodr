@@ -1,21 +1,189 @@
 ---
-title: Expandables (TODO)
+title: Expandables
 ---
+import { Code, Aside } from '@astrojs/starlight/components';
+
+An `expandable` are a set of attributes that are added to [requests](/floodr/benchmark-reference/requests) that allow you to do multiple requests via a set of parameters. There are several types of expandables
+
+## Items
+
+Items allows you to manually define a set of items to run:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Increment counter
+    request:
+      url: /
+    with_items: [10,"hello", 20]`}/>
+
+### Variable Access
+
+The items can be integers, strings, or JSON objects. You can then access the items via the `{{item}}` variable:
 
 
-What is an Expandable? (TODO)
-...
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Increment counter
+    request:
+      url: /{{item}}
+    with_items: [10, "hello", 20]`}/>
+
+### JSON
+
+You can use JSON values, and access their keys directly:
 
 
-- [ ] Items
-    - [ ] Normal Items (`with_items`)
-        - [ ] int
-        - [ ] string
-        - [ ] object/JSON (i.e. `with_items: [{id:5}, {id:20}]`)
-    - [ ] Range Items `with_items_range`
-        - [ ] Start stop step
-    - [ ] Shuffle
-    - [ ] pick
-    - [ ] csv-driven `with_items_from_csv`
-        - [ ] file_name
-        - [ ] quote_char
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Increment counter
+    request:
+      url: /{{item.id}}
+    with_items:
+      - {id: 5}
+      - {id: 10}`}/>
+
+
+## Ranges
+
+Instead of manually defining a set of items, you can also generate them dynamically using a range:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Increment counter
+    request:
+      url: /{{item}}
+    with_items_range: 
+      start: 1 # Number to start with
+      stop: 10 # Number to stop
+      step: 1  # How much to increase each item by`}/>
+
+In this case we will get `/1`,`/2`,...,`/10`
+
+## Pick & Shuffle
+
+If you do not want to include the entire set of items, you can specify how many you want to pick:
+
+<Code title="benchmark.yml" lang="yaml" mark={["pick: 10"]} code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Increment counter
+    request:
+      url: /{{item}}
+    with_items_range: 
+      start: 1
+      stop: 1000 
+      step: 1
+    pick: 10`}/>
+
+In this case you will just get the numbers 1-10, but you can also opt to shuffle the results so you will get 10 items within the range 1-1000:
+
+<Code title="benchmark.yml" lang="yaml" mark={["shuffle: true"]} code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Increment counter
+    request:
+      url: /{{item}}
+    with_items_range: 
+      start: 1
+      stop: 1000 
+      step: 1
+    shuffle: true
+    pick: 10`}/>
+
+
+## CSV-driven
+
+You can also instead generate requests via a CSV consider the following CSV:
+
+<Code title="users.csv" lang="csv" code={`id,name
+2,John
+3,Mary
+`}/>
+
+Or in a table view:
+
+| id | name |
+|----|------|
+| 2 | John | 
+| 3 | Mary | 
+
+
+Because there is a heading you imagine the rows being transformed into a JSON array like this:
+
+```json
+[
+    {"id":2,"name":"John"},
+    {"id":3,"name":"Mary"},
+]
+```
+
+We can then create a plan that sends a POST request to `/<id>` with the body containing the `name`:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Send data
+    request:
+      url: /{{ item.id }}
+      method: POST
+      body: "{{ item.name }}"
+    with_items_from_csv: ./users.csv`}/>
+
+If you wish to indicate that a different quotation character was used you can use `quote_char`. For example consider the following csv containing preformatted JSON escaped by `'`:
+
+<Code title="queries.csv" lang="csv" code={`query
+'{"a": "12", "b": 3}'
+'{"a": "1", "b": 23}'
+`}/>
+
+
+Or in a table view
+
+| query | 
+|-----|
+|`'{"a": "12", "b": 3}'`|
+|`'{"a": "12", "b": 3}'`|
+
+We can then use this with:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: http://localhost:4896
+
+plan:
+  - name: POST some crafted JSONs stored in CSV
+    request:
+      url: /api/transactions
+      method: POST
+      body: '{{ item.queries }}'
+      headers:
+        Content-Type: 'application/json'
+    with_items_from_csv:
+      file_name: ./queries.csv
+      quote_char: "\\'"`}/>
+
+
+## Text-file driven
+
+If you have a text file, you can also use each line of the file as an item. For example with the file:
+
+<Code title="lorem.txt" lang="text" code={`Lorem ipsum dolor sit amet.
+consetetur sadipscing elitr?
+sed diam nonumy eirmod tempor invidunt ut!
+`}/>
+
+and the benchmark file:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: make request
+    request:
+      url: /
+      method: POST
+      body: "{{item}}"
+    with_items_from_file: lorem.txt`}/>
+
+You would get 3 requests with `Lorem ipsum dolor sit amet.`, `consetetur sadipscing elitr?`, and `sed diam nonumy eirmod tempor invidunt ut!` respectively

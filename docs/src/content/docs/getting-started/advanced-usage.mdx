@@ -384,6 +384,21 @@ Sample standard deviation 94ms
 99.5'th percentile        315ms
 99.9'th percentile        315ms`}/>
 
+## Environment variables
+
+You can also use environment variables directly in your requests:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+iterations: 1 
+
+plan:
+  - name: Fetch route based on environment variable
+    request:
+      url: /{{ HOMEURL }}
+`}/>
+
+<Aside type="danger">Be careful not to leak important information accidentally with this feature</Aside>
+
 ## More Features
 
 There are other features available, you can find more detailed information and a list of the available actions in the [benchmark reference](/floodr/benchmark-reference) section.

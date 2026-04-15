@@ -1,9 +1,11 @@
 ---
-title: Requests (TODO)
+title: Requests
 sidebar:
   order: 2
 ---
 import { Code, Aside } from '@astrojs/starlight/components';
+
+Requests are the quintessential action in floodr, they allow you to make HTTP requests.
 
 ## Exposed values
 
@@ -17,30 +19,717 @@ When [assigning](/floodr/benchmark-reference/actions/assign) the following value
 | url | `String` | The retrieved url | 
 | version | `String` | The HTTP version (e.g. `http/1.1`) | 
 
-
-
 <Aside type={`note`}>The `Value` type is a mapping of any valid JSON value (i.e. `Bool`, `Number`, `String`,`Array` or `Object`) as deserialized by [`serde_json::from_str`](https://docs.rs/serde_json/latest/serde_json/fn.from_str.html). For most requests it typically coerced into a `String`, but this is not always true</Aside>
-
-
 
 ## Examples
 
 Below are examples of how to use the feature
 
-### Setting The Method (TODO)
+### Single GET Request
+
+Below is a plan with a single request to `http://localhost:4896`:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+
+plan: # An array of actions to take
+  - name: Fetch route
+    request:
+      url: /
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+<Aside type="caution">Keep in Mind that `base` is used **exactly** as-is, trailing slash included. So, if your base is `http://localhost:4896/` and the `url` is `/` you will request `http://localhost:4896//`</Aside>
+
+You can also fetch to an absolute URL if you want, for example:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896' # The domain we want to hit
+
+plan: # An array of actions to take
+  - name: Fetch route
+    request:
+      url: /
+  - name: Get Google
+    request:
+      url: https://google.ca # ignores the base value
+`}/>
+
+### Custom Headers
+
+If you need to set additional headers you can using the `headers` key. For this example consider a server with a `/header` route that returns a 403 if `x-token` is not `1234` in the header, else return 200. We can test this with the following plan:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: http://localhost:7878
+
+plan:
+  - name: Fetch route with no token
+    request:
+      url: /header
+    assign: axumHeaderWrong
+  - name: Fetch route with token
+    request:
+      url: /header
+      headers:
+        x-token: "1234"
+    assign: axumHeaderRight
+
+  - name: Assert Status
+    assert:
+      key: axumHeaderWrong.status
+      value: 403
+  - name: Assert Status
+    assert:
+      key: axumHeaderRight.status
+      value: 200
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "axum-server-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+```
+
+`src/main.rs`
+
+```rust
+use axum::{
+    extract::{Query},
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+};
+use serde_json::Value;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/header", get(header_check));
+
+    println!("Listening on http://127.0.0.1:7878");
+
+    axum::serve(
+        tokio::net::TcpListener::bind("127.0.0.1:7878")
+            .await
+            .unwrap(),
+        app,
+    )
+    .await
+    .unwrap();
+}
+
+//
+// 1. /header
+//
+async fn header_check(headers: HeaderMap) -> impl IntoResponse {
+    match headers.get("x-token").and_then(|v| v.to_str().ok()) {
+        Some("1234") => StatusCode::OK,
+        _ => StatusCode::FORBIDDEN,
+    }
+}
+```
+
+</details>
+
+</Aside>
+
+
+### Cookies
+
+Cookies are accessible when set via a server. Consider a situation where a route of `/cookie?id=value` returns a 200 with a cookie that has the id set as whatever ID you submitted. Here is a benchmark file to test with:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: http://localhost:7878
+
+plan:
+  - name: Cookie Testing
+    request:
+      url: /cookie?id=1212
+    assign: axumCookie
+  - name: Cookie Assertions
+    assert:
+      key: cookies.id
+      value: 1212
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "axum-server-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+```
+
+`src/main.rs`
+
+```rust
+use axum::{
+    extract::{Query},
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+};
+use serde_json::Value;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/cookie", get(cookie_handler));
+
+    println!("Listening on http://127.0.0.1:7878");
+
+    axum::serve(
+        tokio::net::TcpListener::bind("127.0.0.1:7878")
+            .await
+            .unwrap(),
+        app,
+    )
+    .await
+    .unwrap();
+}
+
+//
+// /cookie?id=value
+//
+async fn cookie_handler(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+    let id = params.get("id").cloned().unwrap_or_default();
+
+    let mut res = Response::new(axum::body::Body::empty());
+    *res.status_mut() = StatusCode::OK;
+
+    res.headers_mut().insert(
+        axum::http::header::SET_COOKIE,
+        HeaderValue::from_str(&format!("id={}; Path=/", id)).unwrap(),
+    );
+
+    res
+}
+
+```
+
+</details>
+
+</Aside>
+
+<Aside type="caution">`cookies` is a **global** key, **not request specific**</Aside>
+
+### Setting The Method
+
+You can set different methods for requests using the `method` field. Consider a route `/counter` that increments a counter on `POST` and returns it on `GET`, with a plan:
+
+<Code title="benchmark.yml" lang="yaml" mark={["method: POST"]} code={`base: http://localhost:7878
+
+plan:
+  - name: Increment counter
+    request:
+      url: /counter
+      method: POST
+      body: ""
+    with_items_range: 
+      start: 1
+      stop: 10
+      step: 1
+  - name: Get counter value
+    request:
+      url: /counter
+    assign: counterValue
+  - name: Assert counter value
+    assert:
+      key: counterValue.body
+      value: 10
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "axum-server-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+```
+
+`src/main.rs`
+
+```rust
+use axum::{
+    extract::{Query, State},
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+};
+use serde_json::Value;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() {
+    let app_state = AppState {
+        counter: Arc::new(Mutex::new(0)),
+    };
+    let app = Router::new()
+        .route("/counter", get(get_counter).post(increment_counter)).with_state(app_state);
+
+    println!("Listening on http://127.0.0.1:7878");
+
+    axum::serve(
+        tokio::net::TcpListener::bind("127.0.0.1:7878")
+            .await
+            .unwrap(),
+        app,
+    )
+    .await
+    .unwrap();
+}
+
+
+//
+// Shared state
+//
+#[derive(Clone)]
+struct AppState {
+    counter: Arc<Mutex<i32>>,
+}
+
+//
+// GET /counter -> returns current value
+//
+async fn get_counter(State(state): State<AppState>) -> String {
+    let value = state.counter.lock().unwrap();
+    value.to_string()
+}
+
+//
+// POST /counter -> increments and returns new value
+//
+async fn increment_counter(State(state): State<AppState>) -> String {
+    let mut value = state.counter.lock().unwrap();
+    *value += 1;
+    value.to_string()
+}
+```
+
+</details>
+
+</Aside>
+
+<Aside type="tip">The `with_items_range` is an [expandable](/floodr/benchmark-reference/expandables) that will send the request 10 times</Aside>
+
+### Requests with Body values
+
+If you need to send a body with your request you have 3 options to do so
+
+<Aside type='note'>You can only send body values with `POST`, `PATCH`, and `PUT` requests</Aside>
+
+#### String
+
+The simplest option is to send a straightforward string as the body. You can do this by just adding the `body` to the request. In this case we are sending JSON data to an endpoint `/json-to-yaml` which takes the JSON text, and turns it into a YAML-syntax. To do this we need ot make sure we assign the `application/json` type as a header when sending:
+
+<Code title="benchmark.yml" lang="yaml" mark={["method: POST",`body: '{"name":"kieran","age":27}'`]} code={`base: http://localhost:7878
+
+plan:
+  - name: Send JSON request to be converted to yaml
+    request:
+      url: /json-to-yaml
+      method: POST
+      body: '{"name":"kieran","age":27}'
+      headers:
+        content-type: application/json
+    assign: jsonRequest
+  - name: assert JSON value is now YAML
+    assert:
+      key: jsonRequest.status
+      value: 200
+  - name: assert JSON value is now YAML
+    assert:
+      key: jsonRequest.body
+      value: |
+        age: 27
+        name: kieran
+`}/>
+
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "axum-server-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+```
+
+`src/main.rs`
+
+```rust
+use axum::{
+    extract::{Query, State},
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+};
+use serde_json::Value;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/json-to-yaml", post(json_to_yaml));
+
+    println!("Listening on http://127.0.0.1:7878");
+
+    axum::serve(
+        tokio::net::TcpListener::bind("127.0.0.1:7878")
+            .await
+            .unwrap(),
+        app,
+    )
+    .await
+    .unwrap();
+}
+
+//
+// /json-to-yaml
+//
+async fn json_to_yaml(Json(payload): Json<Value>) -> impl IntoResponse {
+    serde_yaml::to_string(&payload)
+        .map(|yaml| (StatusCode::OK, yaml))
+        .unwrap_or_else(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "failed to convert".to_string(),
+            )
+        })
+}
+
+
+```
+
+</details>
+
+</Aside>
 
 
 
-### Custom Headers (TODO)
+#### Files
 
-### Cookies (TODO)
+You can use the `file` field to specify a filepath as an attribute of the `body`. The `content-type` header is not necessarily reliable, so in the example we are setting it manually. In this case we are sending JSON data to an endpoint `/json-to-yaml` which takes the JSON text, and turns it into a YAML-syntax:
 
-### Requests with Body values (TODO)
+<Code title="user.json" lang="json" code={`{"name":"kieran","age":27}`}/>
 
-#### String (TODO)
+<Code title="benchmark.yml" lang="yaml" mark={["file: ./user.json"]} code={`base: http://localhost:7878
 
-#### Files (TODO)
+plan:
+  - name: Send JSON request to be converted to yaml
+    request:
+      url: /json-to-yaml
+      method: POST
+      body: 
+        file: ./user.json
+      headers:
+        content-type: application/json
+    assign: jsonRequest
+  - name: assert JSON value is now YAML
+    assert:
+      key: jsonRequest.status
+      value: 200
+  - name: assert JSON value is now YAML
+    assert:
+      key: jsonRequest.body
+      value: |
+        age: 27
+        name: kieran
+`}/>
 
-#### Hex (TODO)
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "axum-server-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+```
+
+`src/main.rs`
+
+```rust
+use axum::{
+    extract::{Query, State},
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+};
+use serde_json::Value;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/json-to-yaml", post(json_to_yaml));
+
+    println!("Listening on http://127.0.0.1:7878");
+
+    axum::serve(
+        tokio::net::TcpListener::bind("127.0.0.1:7878")
+            .await
+            .unwrap(),
+        app,
+    )
+    .await
+    .unwrap();
+}
+
+//
+// /json-to-yaml
+//
+async fn json_to_yaml(Json(payload): Json<Value>) -> impl IntoResponse {
+    serde_yaml::to_string(&payload)
+        .map(|yaml| (StatusCode::OK, yaml))
+        .unwrap_or_else(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "failed to convert".to_string(),
+            )
+        })
+}
+
+
+```
+
+</details>
+
+</Aside>
+
+
+#### Hex
+
+You can also directly send hex bytes to an endpoint using the `hex` field in `body`. Consider an endpoint `/hex-to-ascii` that takes in hex values and returns their ascii representation:
+
+<Code title="benchmark.yml" lang="yaml" mark={["hex: 68 65 6C 6C 6F 20 77 6F 72 6C 64"]} code={`base: http://localhost:7878
+
+plan:
+  - name: Send Hex hello world
+    request:
+      method: POST
+      url: /hex-to-ascii
+      body: # hello world
+        hex: 68 65 6C 6C 6F 20 77 6F 72 6C 64
+    assign: hexTesting
+  - name: Assert successful
+    assert:
+      key: hexTesting.status
+      value: 200
+  - name: Assert correct response
+    assert:
+      key: hexTesting.body
+      value: hello world
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "axum-server-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+```
+
+`src/main.rs`
+
+```rust
+use axum::{
+    extract::{Query, State},
+    http::{HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Json, Router,
+    body::Bytes,
+};
+use serde_json::Value;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/hex-to-ascii", post(hex_to_ascii));
+
+    println!("Listening on http://127.0.0.1:7878");
+
+    axum::serve(
+        tokio::net::TcpListener::bind("127.0.0.1:7878")
+            .await
+            .unwrap(),
+        app,
+    )
+    .await
+    .unwrap();
+}
+
+///
+/// POST /hex-to-ascii -> Take in bytes representing ascii chars and return them
+/// 
+async fn hex_to_ascii(body: Bytes) -> Result<String, StatusCode> {
+    // Convert bytes -> string
+    let input = match std::str::from_utf8(&body) {
+        Ok(s) => s,
+        Err(_) => return Err(StatusCode::BAD_REQUEST),
+    };
+
+    Ok(input.to_string())
+}
+
+```
+
+</details>
+
+</Aside>
+
 
 

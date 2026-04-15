@@ -20,20 +20,18 @@ This is the list of all features supported by the current version of `floodr`:
 - **Concurrency:** run your benchmarks choosing the number of concurrent iterations.
 - **Multi iterations:** specify the number of iterations you want to run the benchmark.
 - **Ramp-up:** specify the amount of time, in seconds, that it will take `floodr` to start all iterations.
-- **Delay:** introduce controlled delay between requests. Example: [delay.yml](./example/delay.yml)
-- **Dynamic urls:** execute requests with dynamic interpolations in the url, like `/api/users/{{ item }}`
-- **Dynamic headers:** execute requests with dynamic headers. Example: [headers.yml](./example/headers.yml)
-- **Interpolate environment variables:** set environment variables, like `/api/users/{{ EDITOR }}`
-- **Executions:** execute remote commands with test plan data.
-- **Assertions:** assert values during the test plan. Example: [iterations.yml](./example/iterations.yml)
-- **Request dependencies:** create dependencies between requests with `assign` and url interpolations.
-- **Split files:** organize your benchmarks in multiple files and include them.
-- **CSV support:** read CSV files and build N requests fill dynamic interpolations with CSV data.
-- **HTTP methods:** build request with different http methods like GET, POST, PUT, PATCH, HEAD or DELETE.
-- **Cookie support:** create benchmarks with sessions because cookies are propagates between requests.
-- **Stats:** get nice statistics about all the requests. Example: [cookies.yml](./example/cookies.yml)
-- **Thresholds:** compare the current benchmark performance against a stored one session and fail if a threshold is exceeded.
+- [**Delay:** introduce controlled delay between requests.](/floodr/benchmark-reference/actions/delay)
+- [**Variables:** execute requests with dynamic interpolations in the url, like `/api/users/{{ item }}`](/floodr/benchmark-reference/actions/assign)
+- [**Dynamic headers:** execute requests with dynamic headers.](/floodr/benchmark-reference/actions/requests#custom-headers)
+- [**Executions:** execute commands within tests.](/floodr/benchmark-reference/actions/exec)
+- [**Assertions:** assert values during the test plan, failing when they are not met.](/floodr/benchmark-reference/actions/asserts)
+- [**Split files:** organize your benchmarks in multiple files and include them.](/floodr/benchmark-reference/include)
+- [**CSV support:** read CSV files and build N requests fill dynamic interpolations with CSV data.](/floodr/benchmark-reference/expandables)
+- [**HTTP methods:** build request with different http methods like GET, POST, PUT, PATCH, HEAD or DELETE.](/floodr/benchmark-reference/actions/requests#setting-the-method)
+- [**Cookie support:** create benchmarks with sessions because cookies are propagates between requests.](/floodr/benchmark-reference/actions/requests#cookies)
+- [**Stats:** get nice statistics about all the requests.](/floodr/getting-started/basic-usage)
+- [**Thresholds:** compare the current benchmark performance against a stored one session and fail if a threshold is exceeded.](/floodr/cli)
 
 ## Demo
-{/* TODO: Update to a new recording with floodr */}
-[![demo](https://asciinema.org/a/164615.png)](https://asciinema.org/a/164615?autoplay=1)
+
+<script src="https://asciinema.org/a/NfDR2EDUYkyH57aO.js" id="asciicast-NfDR2EDUYkyH57aO" async="true"></script>

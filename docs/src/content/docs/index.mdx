@@ -1,7 +1,7 @@
 ---
 title: Welcome to Floodr
 description: floodr is a HTTP load testing application written in Rust. The main goal for this project is to build a really lightweight tool as alternative to other that require JVM and other stuff.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+template: splash
 hero:
   tagline: A configurable, simple rust-based HTTP load testing system
   image:
@@ -17,20 +17,23 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 ## Next steps
 
 <CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
+	<Card title="High Performance" icon="seti:clock">
+		Performant, allowing you to stress your services without hitting language limitations
 	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
+	<Card title="Easy to Use" icon="open-book">
+		Get started [quickly and easily](/floodr/getting-started/basic-usage)
 	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
+	<Card title="YAML-based benchmarking plans" icon="add-document">
+		Fully configurable testing plans with a [simple syntax](/floodr/benchmark-reference/)
 	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
+	<Card title="Easy to Use CLI" icon="seti:shell">
+		A simple [CLI](/floodr/cli) with sane defaults to get running quickly
 	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
+	<Card title="API Usage" icon="seti:rust">
+		Want to integrate Floodr into your own project, the [API](/floodr/api-ref/floodr) is the way to go
 	</Card>
 </CardGrid>
+
+## Demo
+
+<script src="https://asciinema.org/a/NfDR2EDUYkyH57aO.js" id="asciicast-NfDR2EDUYkyH57aO" async="true"></script>
