@@ -27,5 +27,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUSTTARGET: ${{ matrix.target }}
           TOOLCHAIN_VERSION: 1.83.0
-          EXTRA_FILES: "README.md"
+          EXTRA_FILES: "README.md CHANGELOG.md"
           ARCHIVE_TYPES: ${{ matrix.archive }}

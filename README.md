@@ -24,6 +24,7 @@ This is the list of all features supported by the current version of `floodr`:
 - [**Cookie support:** create benchmarks with sessions because cookies are propagates between requests.](https://kieranwood.ca/floodr/benchmark-reference/actions/requests#cookies)
 - [**Stats:** get nice statistics about all the requests.](https://kieranwood.ca/floodr/getting-started/basic-usage)
 - [**Thresholds:** compare the current benchmark performance against a stored one session and fail if a threshold is exceeded.](https://kieranwood.ca/floodr/cli)
+- **Prebuilt docker image**: see [example/compose](https://github.com/Descent098/floodr/tree/main/example/compose) for example
 
 ## Installation
 

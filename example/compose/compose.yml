@@ -1,0 +1,12 @@
+services:
+
+  py:
+    build: ./web
+
+  floodr:
+    image: ghcr.io/descent098/floodr:latest
+    volumes:
+      - ./benchmark.yml:/app/benchmark.yml
+    entrypoint: ["/usr/local/bin/floodr", "--stats", "--quiet"]
+    depends_on:
+      - py
