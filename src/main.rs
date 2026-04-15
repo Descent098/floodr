@@ -143,10 +143,10 @@ impl Cli {
       floodr::compare_benchmark(&list_reports, Some(&report_file), Some(&threshold));
     }
 
-    return process::ExitCode::SUCCESS;
+    process::ExitCode::SUCCESS
   }
 }
 
 fn main() -> process::ExitCode {
-  return Cli::parse().run();
+  Cli::parse().run()
 }

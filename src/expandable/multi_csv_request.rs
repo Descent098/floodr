@@ -114,7 +114,7 @@ pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
     if let Some(map) = source.as_mapping_mut() {
       map.insert(Value::String("with_item".into()), with_item.clone());
       map.insert(Value::String("index".into()), Value::Number(serde_yaml::Number::from(index)));
-      map.remove(&Value::String("with_items_from_csv".into()));
+      map.remove(Value::String("with_items_from_csv".into()));
     }
 
     benchmark.push(ActionItem::new(Box::new(Request::new(item, Some(with_item.clone()), Some(index))), source));

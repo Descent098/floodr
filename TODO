@@ -1,13 +1,13 @@
 - [x] Rename to Floodr to avoid name conflicts
     - [x] Create logo
     - [x] Add color theme
-- [ ] Modernize
+- [x] Modernize
     - [x] Remove `--benchmark` flag and make it an optional position param
-    - [ ] Update dependencies
+    - [x] Update dependencies
         - [x] Update easy wins
-        - [ ] Fix incompatabilities
+        - [x] Fix incompatabilities
             - [x] Clap v4
-            - [ ] rand 0.10
+            - [x] rand 0.10
         - [x] Docs stuff (below)
         - [x] Add templates
             - [x] PR template
@@ -29,7 +29,7 @@
                     - [x] Are you willing (or in progress) to submit a PR?
     - [x] Fix exec actions
 - [ ] User Documentation
-    - [ ] Create better documentation site
+    - [x] Create better documentation site
         - [x] Port starlight improvements from https://github.com/Descent098/components
             - [x] Move packages
 
@@ -183,6 +183,7 @@
     - [x] Document overall usage as a library (covered by docstrings)
     - [ ] CI/CD
         - [ ] Fix clippy suggestions `cargo clippy -- -D warnings`
+        - [ ] Check coverage with `cargo tarpaulin --out Xml --ignore-tests`
         - [ ] Update existing workflows
         - [ ] Fix release workflow to automate platform builds
             - [ ] windows

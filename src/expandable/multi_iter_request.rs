@@ -137,7 +137,7 @@ pub fn expand(item: &Value, benchmark: &mut Benchmark) {
         if let Some(map) = source.as_mapping_mut() {
           map.insert(Value::String("with_item".into()), Value::Number(Number::from(*value)));
           map.insert(Value::String("index".into()), Value::Number(Number::from(index)));
-          map.remove(&Value::String("with_items_range".into()));
+          map.remove(Value::String("with_items_range".into()));
         }
 
         benchmark.push(ActionItem::new(Box::new(Request::new(item, Some(Value::Number(Number::from(*value))), Some(index))), source));

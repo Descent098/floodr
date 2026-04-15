@@ -2,6 +2,24 @@
 //!
 //! Exposes and parses the properties necessary to adapt the behavior
 //! of the benchmark runner (eg. concurrency, iterations, options).
+//! 
+//! # Examples
+//! 
+//! ## Setup config from file
+//! 
+//! ```rust,ignore
+//! use floodr::parsing::config::Config;
+//!
+//! let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
+//! ```
+//! 
+//! ## Setup config with default values
+//! 
+//! ```
+//! use floodr::parsing::config::Config;
+//! 
+//! let conf = Config::new_with_defaults("http://localhost:4896".to_string());
+//! ```
 
 use serde_yaml::Value;
 
@@ -108,6 +126,27 @@ impl Config {
       verbose,
       exec_terminal,
     }
+  }
+
+  /// Setup a Config instance with common defaults
+  /// 
+  /// # Arguments
+  /// 
+  /// - `base` (`String`) - The host domain you want to use
+  /// 
+  /// # Returns
+  /// 
+  /// - `Config` - The instantiated config instance
+  /// 
+  /// # Examples
+  /// 
+  /// ```
+  /// use floodr::parsing::config::Config;
+  /// 
+  /// let conf = Config::new_with_defaults("http://localhost:4896".to_string());
+  /// ```
+  pub fn new_with_defaults(base: String) -> Config{
+    Config { base, concurrency: 1, iterations: 1, relaxed_interpolations: false, no_check_certificate: false, rampup: 0, quiet: false, timeout: 10, verbose: false, exec_terminal: None }
   }
 }
 
