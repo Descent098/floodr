@@ -2,6 +2,8 @@
 
 *Floodr is a HTTP load testing system designed to be lightweight, fast, and highly configurable*
 
+[Documentation site](https://kieranwood.ca/floodr)
+
 ## Demo
 
 [![asciicast](https://asciinema.org/a/NfDR2EDUYkyH57aO.svg)](https://asciinema.org/a/NfDR2EDUYkyH57aO)

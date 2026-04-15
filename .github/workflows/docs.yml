@@ -2,7 +2,8 @@ name: Build and Deploy Documentation
 
 on:
   push:
-    branches: [main]
+    branches: ['main']
+    paths: ['docs/**']
   workflow_dispatch:
 
 permissions:
@@ -11,38 +12,93 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build_docs:
     runs-on: ubuntu-latest
     steps:
-      # Get code and prep container for build
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - uses: moonrepo/setup-rust@v1
-      # Build docs
-      - run: cd docs && bun i && bun run build && cd ..
-      - run: cargo doc --no-deps --release
-      # Reformat final artifact for upload
-      - run: mv docs/dist documentation-build
-      - run: mv target/doc documentation-build/api-ref
-      # Upload artifact for gh-pages
-      - name: Upload static files as artifact
-        id: deployment
-        uses: actions/upload-pages-artifact@v5
+
+      # Cache bun dependencies
+      - name: Cache Bun
+        uses: actions/cache@v4
         with:
-          path: documentation-build/
+          path: |
+            ~/.bun/install/cache
+            docs/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('docs/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Build docs
+        run: |
+          cd docs
+          bun install
+          bun run build
+
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-build
+          path: docs/dist
+
+  build_api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: moonrepo/setup-rust@v1
+
+      # Cache cargo
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build API docs
+        run: cargo doc --no-deps --release
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-build
+          path: target/doc
+
   deploy:
-    needs: build
+    needs: [build_docs, build_api]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-build
+          path: documentation-build
+
+      - name: Download API artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-build
+          path: documentation-build/api-ref
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: documentation-build/
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
