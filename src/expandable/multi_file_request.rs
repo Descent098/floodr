@@ -19,7 +19,6 @@ use crate::engine::benchmark::{ActionItem, Benchmark};
 use crate::parsing::interpolator::INTERPOLATION_REGEX;
 use crate::parsing::reader;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use serde_yaml::Value;
 use std::path::Path;
 
@@ -95,7 +94,7 @@ pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark) {
   let mut with_items_file = reader::read_file_as_yml_array(final_path);
 
   if let Some(shuffle) = item.get("shuffle").and_then(|v| v.as_bool()) && shuffle {
-      let mut rng = thread_rng();
+      let mut rng = rand::rng();
       with_items_file.shuffle(&mut rng);
   }
 

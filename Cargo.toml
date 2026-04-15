@@ -24,7 +24,7 @@ async-trait = "0.1.89"
 futures = "0.3.32"
 lazy_static = "1.5.0"
 num_cpus = "1.17.0"
-rand = "0.8.5" # TODO
+rand = "0.10.1"
 hdrhistogram = "7.5.4"
 hex = "0.4.3"
 

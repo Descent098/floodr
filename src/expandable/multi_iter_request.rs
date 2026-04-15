@@ -18,7 +18,6 @@
 use std::convert::TryInto;
 
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use serde_yaml::{Number, Value};
 
 use crate::parsing::interpolator::INTERPOLATION_REGEX;
@@ -123,7 +122,7 @@ pub fn expand(item: &Value, benchmark: &mut Benchmark) {
       let mut with_items: Vec<i64> = (start..stop).step_by(step as usize).collect();
 
       if let Some(shuffle) = item.get("shuffle").and_then(|v| v.as_bool()) && shuffle {
-          let mut rng = thread_rng();
+          let mut rng = rand::rng();
           with_items.shuffle(&mut rng);
         }
 
