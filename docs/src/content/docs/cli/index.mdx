@@ -12,6 +12,7 @@ Usage: floodr [OPTIONS] [BENCHMARK] [COMMAND]
 
 Commands:
   compare  Compares current execution metrics against a previous benchmark report
+  reports  Writes benchmark results to a report file
   help     Print this message or the help of the given subcommand(s)
 
 Arguments:
@@ -19,7 +20,6 @@ Arguments:
 
 Options:
   -s, --stats                              Shows request statistics
-  -r, --report <REPORT>                    Sets a report file
       --no-check-certificate               Disables SSL certification check. (Not recommended)
       --tags <TAGS>                        Tags to include
       --skip-tags <SKIP_TAGS>              Tags to exclude
@@ -35,7 +35,7 @@ Options:
 
 For details about basic flags (`--stats`, `---quiet`, etc.) and basic usage, see [the basic usage section](/floodr/getting-started/basic-usage). For details about specific commands, see below:
 
-- `compare` and `--report`: [See the comparisons page](/floodr/cli/comparisons)
+- `compare` and `report`: [See the comparisons page](/floodr/cli/comparisons)
 - `--tags`, `--skip-tags` and `--list-tags`: [See the tagging page](/floodr/benchmark-reference/tags)
 - `--exec-terminal`: [See the exec page](/floodr/benchmark-reference/actions/exec)
 

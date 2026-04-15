@@ -16,7 +16,15 @@ jobs:
     steps:
       # Get code and prep container for build
       - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v6.3
+        with:
+          node-version: 24
+          cache: bun
+          cache-dependency-path: docs/bun.lock
+
+      - uses: oven-sh/setup-bun@v2.2
+        with:
+          bun-version: latest
       - uses: moonrepo/setup-rust@v1
       # Build docs
       - run: cd docs && bun i && bun run build && cd ..
