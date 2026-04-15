@@ -2,15 +2,32 @@
 //!
 //! # Examples
 //!
+//! With a yaml file like:
+//!
 //! ```yaml
 //! plan:
-//!   - name: Fetch users
-//!     request:
-//!       url: /api/users.json
-//! 
-//!   - name: Waiting some milliseconds
+//!   - name: Delay for 500ms
 //!     delay:
-//!       milliseconds: 3000
+//!       milliseconds: 500
+//! ```
+//!
+//! This equates to something like:
+//!
+//! ```rust
+//! use serde_yaml;
+//! use floodr::actions::delay::Delay;
+//! 
+//! let plan_data = r#"
+//! name: Waiting some milliseconds
+//! delay:
+//!   milliseconds: 350"#;
+//! 
+//! let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+//! 
+//! let s = Delay::is_that_you(&action_data);
+//! println!("{}", s); //true
+//! 
+//! let s = Delay::new(&action_data, None);
 //! ```
 //!
 //! # Fallback Behavior
@@ -47,29 +64,21 @@ use std::time::Duration;
 ///
 /// This equates to something like:
 ///
-/// ```
-/// use serde::Serialize;
-/// use floodr::actions::Delay;
-///
-/// #[derive(Serialize)]
-/// struct DelayItemDetails {
-///     milliseconds: u64,
-/// }
-///
-/// #[derive(Serialize)]
-/// struct DelayItem {
-///     name: String,
-///     delay: DelayItemDetails,
-/// }
-///
-/// let config = DelayItem {
-///     name: "Delay for 500ms".to_string(),
-///     delay: DelayItemDetails {
-///         milliseconds: 500,
-///     },
-/// };
-/// let value = serde_yaml::to_value(config).unwrap();
-/// let s = Delay::new(&value, None);
+/// ```rust
+/// use serde_yaml;
+/// use floodr::actions::delay::Delay;
+/// 
+/// let plan_data = r#"
+/// name: Waiting some milliseconds
+/// delay:
+///   milliseconds: 350"#;
+/// 
+/// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+/// 
+/// let s = Delay::is_that_you(&action_data);
+/// println!("{}", s); //true
+/// 
+/// let s = Delay::new(&action_data, None);
 /// ```
 #[derive(Clone)]
 pub struct Delay {
@@ -90,29 +99,28 @@ impl Delay {
   ///
   /// # Examples
   ///
+  /// With a yaml file like:
+  ///
+  /// ```yaml
+  /// plan:
+  ///   - name: Delay for 500ms
+  ///     delay:
+  ///       milliseconds: 500
   /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Delay;
   ///
-  /// #[derive(Serialize)]
-  /// struct DelayItemDetails {
-  ///     milliseconds: u64,
-  /// }
+  /// This equates to something like:
   ///
-  /// #[derive(Serialize)]
-  /// struct DelayItem {
-  ///     name: String,
-  ///     delay: DelayItemDetails,
-  /// }
-  ///
-  /// let config = DelayItem {
-  ///     name: "Delay for 500ms".to_string(),
-  ///     delay: DelayItemDetails {
-  ///         milliseconds: 500,
-  ///     },
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Delay::is_that_you(&value);
+  /// ```rust
+  /// use serde_yaml;
+  /// use floodr::actions::delay::Delay;
+  /// 
+  /// let plan_data = r#"
+  /// name: Waiting some milliseconds
+  /// delay:
+  ///   milliseconds: 350"#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// let s = Delay::is_that_you(&action_data);
+  /// println!("{}", s); // true
   /// ```
   pub fn is_that_you(item: &Value) -> bool {
     item.get("delay").and_then(|v| v.as_mapping()).is_some()
@@ -134,29 +142,28 @@ impl Delay {
   ///
   /// # Examples
   ///
+  /// With a yaml file like:
+  ///
+  /// ```yaml
+  /// plan:
+  ///   - name: Delay for 500ms
+  ///     delay:
+  ///       milliseconds: 500
   /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Delay;
   ///
-  /// #[derive(Serialize)]
-  /// struct DelayItemDetails {
-  ///     milliseconds: u64,
-  /// }
+  /// This equates to something like:
   ///
-  /// #[derive(Serialize)]
-  /// struct DelayItem {
-  ///     name: String,
-  ///     delay: DelayItemDetails,
-  /// }
-  ///
-  /// let config = DelayItem {
-  ///     name: "Delay for 500ms".to_string(),
-  ///     delay: DelayItemDetails {
-  ///         milliseconds: 500,
-  ///     },
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Delay::new(&value, None);
+  /// ```rust
+  /// use serde_yaml;
+  /// use floodr::actions::delay::Delay;
+  /// 
+  /// let plan_data = r#"
+  /// name: Waiting some milliseconds
+  /// delay:
+  ///   milliseconds: 350"#;
+  /// 
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// let s = Delay::new(&action_data, None);
   /// ```
   pub fn new(item: &Value, _with_item: Option<Value>) -> Delay {
     let name = extract(item, "name");

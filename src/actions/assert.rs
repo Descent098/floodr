@@ -2,16 +2,17 @@
 //!
 //! # Examples
 //!
-//! ```yaml
-//! plan:
-//!   - name: Fetch account
-//!     request:
-//!       url: /api/account
-//!     assign: foo
-//!   - name: Assert request response code
-//!     assert: # This part
-//!       key: foo.status
-//!       value: 200
+//! ```
+//! use floodr::actions::assert::Assert;
+//! use serde_yaml;
+//! 
+//! let plan_data = r#"
+//! name: Assert request response code
+//! assert:
+//!   key: foo.status
+//!   value: 200"#;
+//! let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+//! let s = Assert::new(&action_data, None);
 //! ```
 
 use async_trait::async_trait;
@@ -39,10 +40,6 @@ use crate::parsing::interpolator;
 ///
 /// ```yaml
 /// plan:
-///   - name: Fetch account
-///     request:
-///       url: /api/account
-///     assign: foo
 ///   - name: Assert request response code
 ///     assert:
 ///       key: foo.status
@@ -52,30 +49,16 @@ use crate::parsing::interpolator;
 /// This equates to something like:
 ///
 /// ```
-/// use serde::Serialize;
-/// use floodr::actions::Assert;
-///
-/// #[derive(Serialize)]
-/// struct AssertItemDetails {
-///     key: String,
-///     value: String,
-/// }
-///
-/// #[derive(Serialize)]
-/// struct AssertItem {
-///     name: String,
-///     assert: AssertItemDetails,
-/// }
-///
-/// let config = AssertItem {
-///     name: "Assert request response code".to_string(),
-///     assert: AssertItemDetails {
-///         key: "foo.status".to_string(),
-///         value: "200".to_string(),
-///     },
-/// };
-/// let value = serde_yaml::to_value(config).unwrap();
-/// let s = Assert::new(&value, None);
+/// use floodr::actions::assert::Assert;
+/// use serde_yaml;
+/// 
+/// let plan_data = r#"
+/// name: Assert request response code
+/// assert:
+///   key: foo.status
+///   value: 200"#;
+/// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+/// let s = Assert::new(&action_data, None);
 /// ```
 #[derive(Clone)]
 pub struct Assert {
@@ -98,30 +81,16 @@ impl Assert {
   /// # Examples
   ///
   /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Assert;
-  ///
-  /// #[derive(Serialize)]
-  /// struct AssertItemDetails {
-  ///     key: String,
-  ///     value: String,
-  /// }
-  ///
-  /// #[derive(Serialize)]
-  /// struct AssertItem {
-  ///     name: String,
-  ///     assert: AssertItemDetails,
-  /// }
-  ///
-  /// let config = AssertItem {
-  ///     name: "Assert request response code".to_string(),
-  ///     assert: AssertItemDetails {
-  ///         key: "foo.status".to_string(),
-  ///         value: "200".to_string(),
-  ///     },
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Assert::is_that_you(&value);
+  /// use floodr::actions::assert::Assert;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Assert request response code
+  /// assert:
+  ///   key: foo.status
+  ///   value: 200"#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// let s = Assert::is_that_you(&action_data); // true
   /// ```
   pub fn is_that_you(item: &Value) -> bool {
     item.get("assert").and_then(|v| v.as_mapping()).is_some()
@@ -141,30 +110,16 @@ impl Assert {
   /// # Examples
   ///
   /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Assert;
-  ///
-  /// #[derive(Serialize)]
-  /// struct AssertItemDetails {
-  ///     key: String,
-  ///     value: String,
-  /// }
-  ///
-  /// #[derive(Serialize)]
-  /// struct AssertItem {
-  ///     name: String,
-  ///     assert: AssertItemDetails,
-  /// }
-  ///
-  /// let config = AssertItem {
-  ///     name: "Assert request response code".to_string(),
-  ///     assert: AssertItemDetails {
-  ///         key: "foo.status".to_string(),
-  ///         value: "200".to_string(),
-  ///     },
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Assert::new(&value, None);
+  /// use floodr::actions::assert::Assert;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Assert request response code
+  /// assert:
+  ///   key: foo.status
+  ///   value: 200"#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// let s = Assert::new(&action_data, None);
   /// ```
   pub fn new(item: &Value, _with_item: Option<Value>) -> Assert {
     let name = extract(item, "name");

@@ -32,18 +32,44 @@
 //!       value: 200
 //! ```
 //!
-//! Would result in a struct for the corresponding action being created and added to the `floodr::benchmark::Context` struct. In this case a `Request` struct and an `Assert` struct would be created and added to the `Context` struct.
+//! Would result in a struct for the corresponding action being created and added to the `floodr::benchmark::Context` struct. In this case a `Request` struct and an `Assert` struct would be created and eventually added to the `Context` struct.
 //!
 //! ```rust
+//! use floodr::actions::assert::Assert;
+//! use floodr::actions::request::Request;
+//! use serde_yaml;
+//! 
+//! let plan_data_request = r#"
+//! name: Fetch account
+//! request:
+//!   url: /api/account
+//! "#;
+//! let action_data_request = serde_yaml::from_str(plan_data_request).expect("Failed to parse");
+//! 
+//! assert!(Request::is_that_you(&action_data_request));
+//! 
+//! let request_instance = Request::new(&action_data_request, None, None);
+//! 
+//! let plan_data_assert = r#"
+//! name: Assert request response code
+//! assert:
+//!   key: foo.status
+//!   value: 200"#;
+//! 
+//! let action_data_assert = serde_yaml::from_str(plan_data_assert).expect("Failed to parse");
+//! 
+//! assert!(Assert::is_that_you(&action_data_assert));
+//! 
+//! let s = Assert::new(&action_data_assert, None);
 //! ```
 use async_trait::async_trait;
 use serde_yaml::Value;
 
-mod assert;
-mod assign;
-mod delay;
-mod exec;
-mod request;
+pub mod assert;
+pub mod assign;
+pub mod delay;
+pub mod exec;
+pub mod request;
 
 pub use self::assert::Assert;
 pub use self::assign::Assign;

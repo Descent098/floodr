@@ -9,6 +9,24 @@
 //!       command: echo "Hello, world!"
 //!     assign: my_output
 //! ```
+//! 
+//! ```rust
+//! use floodr::actions::exec::Exec;
+//! use serde_yaml;
+//!
+//! let plan_data = r#"
+//! name: Run a command
+//! exec:
+//!   command: echo "Hello, world!"
+//! "#;
+//! let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+//! 
+//! let s = Exec::is_that_you(&action_data);
+//! println!("{}", s); // true
+//! 
+//! let s = Exec::new(&action_data, None);
+//! ```
+//! 
 
 use async_trait::async_trait;
 use colored::*;
@@ -42,31 +60,21 @@ use crate::parsing::interpolator;
 ///
 /// This equates to something like:
 ///
-/// ```
-/// use serde::Serialize;
-/// use floodr::actions::Exec;
-///
-/// #[derive(Serialize)]
-/// struct ExecItemDetails {
-///     command: String,
-/// }
-///
-/// #[derive(Serialize)]
-/// struct ExecItem {
-///     name: String,
-///     exec: ExecItemDetails,
-///     assign: Option<String>,
-/// }
-///
-/// let config = ExecItem {
-///     name: "Run a command".to_string(),
-///     exec: ExecItemDetails {
-///         command: "echo \"Hello, world!\"".to_string(),
-///     },
-///     assign: Some("my_output".to_string()),
-/// };
-/// let value = serde_yaml::to_value(config).unwrap();
-/// let s = Exec::new(&value, None);
+/// ```rust
+/// use floodr::actions::exec::Exec;
+/// use serde_yaml;
+/// 
+/// let plan_data = r#"
+/// name: Run a command
+/// exec:
+///   command: echo "Hello, world!"
+/// "#;
+/// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+/// 
+/// let s = Exec::is_that_you(&action_data);
+/// println!("{}", s); // true
+/// 
+/// let s = Exec::new(&action_data, None);
 /// ```
 #[derive(Clone)]
 pub struct Exec {
@@ -88,31 +96,19 @@ impl Exec {
   ///
   /// # Examples
   ///
-  /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Exec;
-  ///
-  /// #[derive(Serialize)]
-  /// struct ExecItemDetails {
-  ///     command: String,
-  /// }
-  ///
-  /// #[derive(Serialize)]
-  /// struct ExecItem {
-  ///     name: String,
-  ///     exec: ExecItemDetails,
-  ///     assign: Option<String>,
-  /// }
-  ///
-  /// let config = ExecItem {
-  ///     name: "Run a command".to_string(),
-  ///     exec: ExecItemDetails {
-  ///         command: "echo \"Hello, world!\"".to_string(),
-  ///     },
-  ///     assign: Some("my_output".to_string()),
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Exec::is_that_you(&value);
+  /// ```rust
+  /// use floodr::actions::exec::Exec;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Run a command
+  /// exec:
+  ///   command: echo "Hello, world!"
+  /// "#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// 
+  /// let s = Exec::is_that_you(&action_data);
+  /// println!("{}", s); // true
   /// ```
   pub fn is_that_you(item: &Value) -> bool {
     item.get("exec").and_then(|v| v.as_mapping()).is_some()
@@ -131,31 +127,18 @@ impl Exec {
   ///
   /// # Examples
   ///
-  /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Exec;
-  ///
-  /// #[derive(Serialize)]
-  /// struct ExecItemDetails {
-  ///     command: String,
-  /// }
-  ///
-  /// #[derive(Serialize)]
-  /// struct ExecItem {
-  ///     name: String,
-  ///     exec: ExecItemDetails,
-  ///     assign: Option<String>,
-  /// }
-  ///
-  /// let config = ExecItem {
-  ///     name: "Run a command".to_string(),
-  ///     exec: ExecItemDetails {
-  ///         command: "echo \"Hello, world!\"".to_string(),
-  ///     },
-  ///     assign: Some("my_output".to_string()),
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Exec::new(&value, None);
+  /// ```rust
+  /// use floodr::actions::exec::Exec;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Run a command
+  /// exec:
+  ///   command: echo "Hello, world!"
+  /// "#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// 
+  /// let s = Exec::new(&action_data, None);
   /// ```
   pub fn new(item: &Value, _with_item: Option<Value>) -> Exec {
     let name = extract(item, "name");

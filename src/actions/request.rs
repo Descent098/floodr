@@ -1,4 +1,34 @@
 //! Defines the core HTTP Request action and its associated properties.
+//! 
+//! # Examples
+//! 
+//! With a yaml file like:
+//! 
+//! ```yaml
+//! plan:
+//!   - name: Fetch account
+//!     request:
+//!       url: /api/account
+//! ```
+//! 
+//! We get something like
+//! 
+//! ```rust
+//! use floodr::actions::request::Request;
+//! use serde_yaml;
+//! 
+//! let plan_data = r#"
+//! name: Fetch account
+//! request:
+//!   url: /api/account
+//! "#;
+//! let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+//! 
+//! let s = Request::is_that_you(&action_data);
+//! println!("{}", s); // true
+//! 
+//! let s = Request::new(&action_data, None, None);
+//! ```
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -58,44 +88,33 @@ pub enum Body {
 /// - `assign` (`Option<String>`) - The variable to assign the response to
 ///
 /// # Examples
-///
+/// 
 /// With a yaml file like:
-///
+/// 
 /// ```yaml
 /// plan:
 ///   - name: Fetch account
 ///     request:
 ///       url: /api/account
-///     assign: foo
 /// ```
-///
-/// This equates to something like:
-///
-/// ```
-/// use serde::Serialize;
-/// use floodr::actions::Request;
-///
-/// #[derive(Serialize)]
-/// struct RequestItemDetails {
-///     url: String,
-/// }
-///
-/// #[derive(Serialize)]
-/// struct RequestItem {
-///     name: String,
-///     request: RequestItemDetails,
-///     assign: Option<String>,
-/// }
-///
-/// let config = RequestItem {
-///     name: "Fetch account".to_string(),
-///     request: RequestItemDetails {
-///         url: "/api/account".to_string(),
-///     },
-///     assign: Some(String::from("foo")),
-/// };
-/// let value = serde_yaml::to_value(config).unwrap();
-/// let s = Request::new(&value, None, None);
+/// 
+/// We get something like
+/// 
+/// ```rust
+/// use floodr::actions::request::Request;
+/// use serde_yaml;
+/// 
+/// let plan_data = r#"
+/// name: Fetch account
+/// request:
+///   url: /api/account
+/// "#;
+/// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+/// 
+/// let s = Request::is_that_you(&action_data);
+/// println!("{}", s); // true
+/// 
+/// let s = Request::new(&action_data, None, None);
 /// ```
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -133,32 +152,31 @@ impl Request {
   /// - `bool` - True if the item provided is a request
   ///
   /// # Examples
-  ///
+  /// 
+  /// With a yaml file like:
+  /// 
+  /// ```yaml
+  /// plan:
+  ///   - name: Fetch account
+  ///     request:
+  ///       url: /api/account
   /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Request;
-  ///
-  /// #[derive(Serialize)]
-  /// struct RequestItemDetails {
-  ///     url: String,
-  /// }
-  ///
-  /// #[derive(Serialize)]
-  /// struct RequestItem {
-  ///     name: String,
-  ///     request: RequestItemDetails,
-  ///     assign: Option<String>,
-  /// }
-  ///
-  /// let config = RequestItem {
-  ///     name: "Fetch account".to_string(),
-  ///     request: RequestItemDetails {
-  ///         url: "/api/account".to_string(),
-  ///     },
-  ///     assign: Some(String::from("foo")),
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Request::is_that_you(&value);
+  /// 
+  /// We get something like
+  /// 
+  /// ```rust
+  /// use floodr::actions::request::Request;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Fetch account
+  /// request:
+  ///   url: /api/account
+  /// "#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// 
+  /// let s = Request::is_that_you(&action_data);
+  /// println!("{}", s); // true
   /// ```
   pub fn is_that_you(item: &YamlValue) -> bool {
     item.get("request").and_then(|v| v.as_mapping()).is_some()
@@ -177,32 +195,30 @@ impl Request {
   /// - `Request` - The new `Request` action
   ///
   /// # Examples
-  ///
+  /// 
+  /// With a yaml file like:
+  /// 
+  /// ```yaml
+  /// plan:
+  ///   - name: Fetch account
+  ///     request:
+  ///       url: /api/account
   /// ```
-  /// use serde::Serialize;
-  /// use floodr::actions::Request;
-  ///
-  /// #[derive(Serialize)]
-  /// struct RequestItemDetails {
-  ///     url: String,
-  /// }
-  ///
-  /// #[derive(Serialize)]
-  /// struct RequestItem {
-  ///     name: String,
-  ///     request: RequestItemDetails,
-  ///     assign: Option<String>,
-  /// }
-  ///
-  /// let config = RequestItem {
-  ///     name: "Fetch account".to_string(),
-  ///     request: RequestItemDetails {
-  ///         url: "/api/account".to_string(),
-  ///     },
-  ///     assign: Some(String::from("foo")),
-  /// };
-  /// let value = serde_yaml::to_value(config).unwrap();
-  /// let s = Request::new(&value, None, None);
+  /// 
+  /// We get something like
+  /// 
+  /// ```rust
+  /// use floodr::actions::request::Request;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Fetch account
+  /// request:
+  ///   url: /api/account
+  /// "#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// 
+  /// let s = Request::new(&action_data, None, None);
   /// ```
   pub fn new(item: &YamlValue, with_item: Option<YamlValue>, index: Option<u32>) -> Request {
     let name = extract(item, "name");
@@ -226,7 +242,8 @@ impl Request {
         file.read_to_end(&mut buffer).expect("Unable to read file");
         Some(Body::Binary(buffer))
       } else if let Some(hex_str) = request_val.get("body").and_then(|v| v.get("hex")).and_then(|v| v.as_str()) {
-        Some(Body::Binary(hex::decode(hex_str).expect("Invalid hex string")))
+        let cleaned_hex: String = hex_str.chars().filter(|c| !c.is_whitespace()).collect();
+        Some(Body::Binary(hex::decode(&cleaned_hex).expect("Invalid hex string")))
       } else {
         panic!("{} Body must be string, file or hex!!", "WARNING!".yellow().bold());
       }
@@ -495,9 +512,20 @@ impl Runnable for Request {
           let url = response.url().to_string();
           let version = format!("{:?}", response.version()).to_lowercase();
 
-          let data = response.text().await.unwrap();
+          let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_string();
 
-          let body: Value = serde_json::from_str(&data).unwrap_or(serde_json::Value::Null);
+          let data = response.text().await.unwrap();
+            
+          let body: Value = if content_type.contains("application/json") {
+            serde_json::from_str(&data).unwrap_or_else(|_| json!(data))
+          } else {
+            json!(data)
+          };
 
           // Add the info about the requst to context
           let assigned = AssignedRequest {
