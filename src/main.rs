@@ -3,7 +3,6 @@
 //! Defers execution to the library crate `floodr`.
 
 use clap::{Parser, Subcommand, crate_version};
-use colored::control;
 use floodr::engine::benchmark;
 use floodr::parsing::tags;
 use std::process;
@@ -91,10 +90,11 @@ enum Commands {
   },
 }
 
+#[allow(unused_imports)]
 impl Cli {
   fn run(self) -> process::ExitCode {
     #[cfg(windows)]
-    let _ = control::set_virtual_terminal(true);
+    let _ = colored::control::set_virtual_terminal(true);
 
     if self.list_tags {
       tags::list_benchmark_file_tags(&self.benchmark);
