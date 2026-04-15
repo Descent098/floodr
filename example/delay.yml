@@ -10,9 +10,9 @@ plan:
     request:
       url: /api/users.json
 
-  - name: Waiting some seconds
+  - name: Waiting some milliseconds
     delay:
-      seconds: 3
+      milliseconds: 3000
 
   - name: Fetch organizations
     request:

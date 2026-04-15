@@ -1,0 +1,38 @@
+---
+title: Introduction
+sidebar:
+    order: 1
+hero:
+  title: Floodr
+  tagline: HTTP load testing made easy
+  image:
+    alt: A ferris crab riding a wave crashing into a server
+    file: ../../../assets/logo.svg
+tableOfContents: false
+---
+
+Floodr is a configurable, simple rust-based HTTP load testing system. Built around using Ansible-style YAML files to configure your tests.
+
+## Features
+
+This is the list of all features supported by the current version of `floodr`:
+
+- **Concurrency:** run your benchmarks choosing the number of concurrent iterations.
+- **Multi iterations:** specify the number of iterations you want to run the benchmark.
+- **Ramp-up:** specify the amount of time, in seconds, that it will take `floodr` to start all iterations.
+- [**Delay:** introduce controlled delay between requests.](/floodr/benchmark-reference/actions/delay)
+- [**Variables:** execute requests with dynamic interpolations in the url, like `/api/users/{{ item }}`](/floodr/benchmark-reference/actions/assign)
+- [**Dynamic headers:** execute requests with dynamic headers.](/floodr/benchmark-reference/actions/requests#custom-headers)
+- [**Executions:** execute commands within tests.](/floodr/benchmark-reference/actions/exec)
+- [**Assertions:** assert values during the test plan, failing when they are not met.](/floodr/benchmark-reference/actions/asserts)
+- [**Split files:** organize your benchmarks in multiple files and include them.](/floodr/benchmark-reference/include)
+- [**CSV support:** read CSV files and build N requests fill dynamic interpolations with CSV data.](/floodr/benchmark-reference/expandables)
+- [**HTTP methods:** build request with different http methods like GET, POST, PUT, PATCH, HEAD or DELETE.](/floodr/benchmark-reference/actions/requests#setting-the-method)
+- [**Cookie support:** create benchmarks with sessions because cookies are propagates between requests.](/floodr/benchmark-reference/actions/requests#cookies)
+- [**Stats:** get nice statistics about all the requests.](/floodr/getting-started/basic-usage)
+- [**Thresholds:** compare the current benchmark performance against a stored one session and fail if a threshold is exceeded.](/floodr/cli)
+- **Prebuilt docker image**: see [example/compose](https://github.com/Descent098/floodr/tree/main/example/compose) for example
+
+## Demo
+
+<script src="https://asciinema.org/a/NfDR2EDUYkyH57aO.js" id="asciicast-NfDR2EDUYkyH57aO" async="true"></script>

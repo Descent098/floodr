@@ -1,0 +1,202 @@
+---
+title: Tagging
+---
+import { Code, Aside } from '@astrojs/starlight/components';
+
+Floodr features a tagging system that allows you to determine which actions to run out of the defined plan using tags. There are 2 different modes you can use:
+
+1. `--tags` is a whitelist (i.e. `--tags requests,asserts` to run actions tagged with requests **OR** asserts)
+2. `--skip-tags` is a blacklist, anything that doesn't have the provided tags is included
+
+You can also explore your files with a few included commands. For example to see all of your tags you can use `--list-tags`
+
+```bash
+$>floodr --list-tags
+
+Tags            ["asserts", "requests"]
+```
+
+To preview what will run when providing either `--tags` or `--skip-tags` you can use `--list-tasks`:
+
+```bash
+$>floodr --list-tasks --skip-tags asserts
+
+Skip-Tags       ["asserts"]
+name: Fetch route
+request:
+  url: /
+assign: gotham
+tags:
+- requests
+
+name: delay test
+delay:
+  milliseconds: 3000
+
+name: Fetch it again
+request:
+  url: /
+with_items:
+- 70
+- 73
+- 75
+tags:
+- request
+```
+
+## Special Tags
+
+There are two special tags `always` and `never`.
+
+If you assign the `always` tag, `floodr` will always run that item, unless you specifically skip it (`--skip-tags always`).
+
+If you assign the `never` tag to item, `floodr` will skip that item unless you specifically request it (`--tags never`).
+
+## Examples
+
+Below are examples of how to use the feature
+
+### Simple Example
+
+Lets take an example file where we split our processes into requests and asserts:
+
+<Code title="benchmark.yml" lang="yaml" mark={["[requests]", "[asserts]"]} code={`base: http://localhost:4896
+
+plan:
+  - name: Fetch route
+    request:
+      url: /
+    assign: gotham
+    tags: [requests]
+  - name: delay test
+    delay:
+      milliseconds: 3000
+  - name: Assert x-backend header is gotham
+    assert:
+      key: gotham.headers["x-backend"]
+      value: gotham
+    tags: [asserts]
+  - name: Assert URL
+    assert:
+      key: gotham.url
+      value: http://localhost:4896/
+    tags: [asserts]
+  - name: Assert version is http 1.1
+    assert:
+      key: gotham.version
+      value: http/1.1
+    tags: [asserts]
+  - name: Fetch it again
+    request:
+      url: /
+    with_items: [70,73,75]
+    tags: [requests]`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+If we want to skip the asserts we could just run:
+
+```bash
+$>floodr --tags requests
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 316ms
+Fetch it again            http://localhost:4896/ 200 OK 0ms
+Fetch it again            http://localhost:4896/ 200 OK 0ms
+Fetch it again            http://localhost:4896/ 200 OK 0m
+```
+
+<Aside type="note">Notice that we also skipped the delay since `--tags` whitelisted **only** requests</Aside>
+
+or using `--skip-tags` instead:
+
+```bash
+$>floodr --skip-tags asserts
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 316ms
+delay test                3s
+Fetch it again            http://localhost:4896/ 200 OK 0ms
+Fetch it again            http://localhost:4896/ 200 OK 0ms
+Fetch it again            http://localhost:4896/ 200 OK 0m
+```
+
+<Aside type="note">Notice that we ran the delay since `--tags` blacklisted **only** asserts</Aside>
+
+We can also skip/use multiple tags by providing a comma delimited list:
+
+```bash
+$>floodr --skip-tags requests,asserts
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+delay test                3s
+```
+

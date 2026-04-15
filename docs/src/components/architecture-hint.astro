@@ -1,0 +1,114 @@
+
+<span id="aarch">
+
+</span>
+
+<script is:inline>
+function detectPlatform() {
+  const ua = navigator.userAgent || "";
+  const platform = navigator.platform || navigator.userAgentData.platform || "";
+  const uaData = navigator.userAgentData || null;
+
+  let os = "unknown";
+  let arch = "unknown";
+
+  // --------------------------
+  // Detect OS
+  // --------------------------
+  if (uaData && uaData.platform) {
+    const p = uaData.platform.toLowerCase();
+    if (p.includes("win")) os = "windows";
+    else if (p.includes("mac")) os = "macos";
+    else if (p.includes("linux")) os = "linux";
+    else if (p.includes("android")) os = "android"
+    else if (p.includes("iPhone")) os = "ios"
+  }
+
+  if (os === "unknown") {
+    const p = platform.toLowerCase();
+    const u = ua.toLowerCase();
+
+    if (p.includes("win") || u.includes("windows")) os = "windows";
+    else if (p.includes("mac") || u.includes("mac os")) os = "macos";
+    else if (p.includes("linux") || u.includes("linux")) os = "linux";
+    else if (p.includes("android")|| u.includes("android")) os = "android"
+    else if (p.includes("iPhone")|| u.includes("iphone")) os = "ios"
+  }
+
+  // --------------------------
+  // Detect Architecture
+  // --------------------------
+  // Best effort: UA Client Hints (limited support)
+  if (uaData && uaData.getHighEntropyValues) {
+    // Note: this is async, but we’ll still support sync fallback below
+    return uaData.getHighEntropyValues(["architecture", "bitness"]).then(hints => {
+      const architecture = (hints.architecture || "").toLowerCase();
+
+      if (architecture.includes("arm")) {
+        arch = "arm";
+      } else if (
+        architecture.includes("x86") ||
+        architecture.includes("amd64") ||
+        architecture.includes("x64")
+      ) {
+        arch = "x86";
+      } else {
+        // Fallback if client hints are vague
+        arch = detectArchFallback(ua, platform);
+      }
+
+      const result = { os, arch };
+      console.log(result);
+      return result;
+    });
+  }
+
+  // Fallback path
+  arch = detectArchFallback(ua, platform);
+
+  const result = { os, arch };
+  console.log(result);
+  return Promise.resolve(result);
+}
+
+function detectArchFallback(ua, platform) {
+  const combined = `${ua} ${platform}`.toLowerCase();
+
+  if (
+    combined.includes("arm") ||
+    combined.includes("aarch64") ||
+    combined.includes("arm64")
+  ) {
+    return "arm";
+  }
+  if (
+    combined.includes("x86") ||
+    combined.includes("x64") ||
+    combined.includes("win64") ||
+    combined.includes("win32") ||
+    combined.includes("wow64") ||
+    combined.includes("amd64") ||
+    combined.includes("intel")
+  ) {
+    return "x86";
+  }
+
+  return "unknown";
+}
+
+if (window){
+    (async ()=>{
+    const plat = await detectPlatform()
+
+    const res = 
+    (plat.os === "android")? 
+        `Android & IOS are not currently supported, you can attempt to build from source if you so choose`:
+        (plat.os ==='unknown' || plat.arch==='unknown')? 
+            "We were unable to detect what system you're running in browser, if you're unsure which to download, look up how to find out for your operating system (Windows, MacOS, or Linux)":
+            `If you're unsure of your system, based on your browser it seems like you are running ${plat.os} on a ${plat.arch} architecture. Meaning you likely want the <code>${plat.os}${plat.arch}${plat.os==='windows'?'.exe':''}</code> file`
+    
+
+    document.getElementById("aarch").innerHTML = res
+    })()
+}
+</script>

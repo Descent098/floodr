@@ -1,0 +1,8 @@
+# An example of a simple single request
+base: http://localhost:4896
+
+plan:
+- assign: gothamServer
+  name: Fetch route
+  request:
+    url: /

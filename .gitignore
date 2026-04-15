@@ -14,3 +14,10 @@ example/server/node_modules
 
 # Editor temp files
 .vscode
+
+# Tarpaulin generated files
+cobertura.xml
+tarpaulin-report.html
+
+# TODO file
+TODO

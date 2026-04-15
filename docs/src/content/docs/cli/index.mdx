@@ -1,0 +1,42 @@
+---
+title: Command Line Interface
+---
+
+Floodr features a simple to use CLI with the following options:
+
+```bash
+$>floodr help
+A configurable, simple rust-based HTTP load testing system
+
+Usage: floodr [OPTIONS] [BENCHMARK] [COMMAND]
+
+Commands:
+  compare  Compares current execution metrics against a previous benchmark report
+  help     Print this message or the help of the given subcommand(s)
+
+Arguments:
+  [BENCHMARK]  Benchmark file to run [default: benchmark.yml]
+
+Options:
+  -s, --stats                              Shows request statistics
+  -r, --report <REPORT>                    Sets a report file
+      --no-check-certificate               Disables SSL certification check. (Not recommended)
+      --tags <TAGS>                        Tags to include
+      --skip-tags <SKIP_TAGS>              Tags to exclude
+      --list-tags                          List all benchmark tags
+      --list-tasks                         List benchmark tasks (executes --tags/--skip-tags filter)
+  -q, --quiet                              Disables output
+      --request-timeout <REQUEST_TIMEOUT>  Set timeout in seconds for a request
+  -v, --verbose                            Toggle verbose output
+      --exec-terminal <EXEC_TERMINAL>      Set the terminal to run exec commands with
+  -h, --help                               Print help
+  -V, --version                            Print version
+```
+
+For details about basic flags (`--stats`, `---quiet`, etc.) and basic usage, see [the basic usage section](/floodr/getting-started/basic-usage). For details about specific commands, see below:
+
+- `compare` and `--report`: [See the comparisons page](/floodr/cli/comparisons)
+- `--tags`, `--skip-tags` and `--list-tags`: [See the tagging page](/floodr/benchmark-reference/tags)
+- `--exec-terminal`: [See the exec page](/floodr/benchmark-reference/actions/exec)
+
+For details about benchmark file syntax, see the [benchmark referene section](/floodr/benchmark-reference)

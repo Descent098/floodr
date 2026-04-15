@@ -1,0 +1,330 @@
+---
+title: Executions
+---
+import { Code, Aside } from '@astrojs/starlight/components';
+
+Exec actions will allow you to run a command via the terminal during runs. Which terminal is used is determined by your operating system:
+
+| OS | Terminal | 
+|----|----------|
+| Windows | `powershell`|
+| \*nix (linux, etc.) | `bash` | 
+| macOS | `zsh` |
+
+But you can override this with the `--exec-terminal` command, for example to run `bash` on windows, you can use:
+
+<Code lang="bash" frame="terminal" code={`$>floodr --exec-terminal bash`}/>
+
+<Aside type="caution">
+The command is passed to the terminal using `<exec-terminal> -c <command>`, so if your terminal is `powershell`, and the command is `echo "hello"` it would expand to:
+```bash
+$> powershell -c "echo \"hello\""
+```
+
+if your terminal does not support this kind of execution (`-c`), it is not compatible and the commands will fail
+</Aside>
+
+## Security Considerations
+
+<Aside type="danger">
+There is **NO** validation of the commands, nor attempts to mitigate vulnerabilities.
+
+There are at least 2 major concerns because of this:
+
+1. Whatever you tell it to do, it will do. So, if you're executing commands dynamically by using the body of a response for example, if that response contains `rm -rf /` and you ran the pipeline with a sudo account, your system will happily kill itself
+2. You can run a command that causes a DOS, or gives misleading timings. If you run a heavy command, such as feeding the output into another program to run as it's running, you can end up with delays you weren't expecting for a run. For example if you are parsing a large JSON file with [`jq`](https://jqlang.org/) with concurrency at 50, you are essentially running 50 copies of heavy text parsing simultaneously
+</Aside>
+
+## Exposed Values
+
+When [assigning](/floodr/benchmark-reference/actions/assign) you can use the assigned variable name to access the `stdout` from the command. See [this example below](#using-output-of-other-commands) for details
+
+## Examples
+
+Below are examples of how to use the feature
+
+### Echoing Results Into a File
+
+One of the most common use cases for exec is to dump the output of a run in some format to a file. Let's say for example we want to put a header value into a file. We could use:
+
+
+<Code lang="yaml" title="benchmark.yml" mark={["echo 'The backend is: {{gotham.headers[\"x-backend\"]}}' > headerOutput.txt"]} code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch route
+    request:
+      url: /
+    assign: gotham
+  - name: Read the echo'd value into a file
+    exec:
+      command: echo 'The backend is: {{gotham.headers["x-backend"]}}' > headerOutput.txt`}/>
+
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+You can just run the test normally:
+
+```bash
+$>floodr
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 307ms
+Read the echo'd value into a file    echo 'The backend is: {{gotham.headers["x-backend"]}}' > headerOutput.txt
+```
+
+This results in an output with:
+
+<Code title="headerOutput.txt" code={`The backend is: gotham`}/>
+
+### Using Output of Other Commands
+
+You can use the `stdout` of a previously run exec action in another action by using it's [assigned](/floodr/benchmark-reference/actions/assign) name. Consider this (contrived) example:
+
+
+<Code lang="yaml" title="benchmark.yml" mark={["assign: gothamBackendHeader # Assign stdout to a variable", "command: echo '{{gothamBackendHeader}}' > headerOutput.txt"]} code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch route
+    request:
+      url: /
+    assign: gotham
+  - name: Echo the backend
+    exec:
+      command: echo '{{gotham.headers["x-backend"]}} <-Backend'
+    assign: gothamBackendHeader # Assign stdout to a variable
+  - name: Read the echo'd value into a file
+    exec:
+      command: echo '{{gothamBackendHeader}}' > headerOutput.txt`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+This would result in an output of:
+
+<Code title="headerOutput.txt" code={`gotham <-Backend`}/>
+
+### Using Other Programming Languages
+
+As mentioned earlier the system runs `<exec-terminal> -c <command>`. More than just terminals support this style of execution, for example python. Consider the following python script, which includes variables for interpolation:
+
+<Code title="script.py" lang="py" code={`c = open('file.txt')
+c.write("{{gotham.url}}")
+c.close()`}/>
+
+
+We can then take the benchmark file, with the script in single-line mode:
+
+<Code title="benchmark.yml" lang="yaml" code={`
+base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch route
+    request:
+      url: /
+    assign: gotham
+  - name: Exec external commands
+    exec:
+      command: c = open('file.txt', 'w+');c.write('{{gotham.url}}');c.close();
+`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+We can then run the script using:
+
+```bash
+$>floodr --exec-terminal python
+```
+
+<Aside type="note">In macOS/\*nix remember to use `python3` not `python`, same goes for windows if you have python 2 installed still</Aside>
+
+
+This effectively runs:
+
+```bash
+$> python -c "c = open('file.txt', 'w+');c.write('hello world');c.close();"
+```
+
+Which results in:
+
+
+<Code title="file.txt" code={`http://localhost:4896/`}/>
+

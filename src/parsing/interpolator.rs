@@ -1,32 +1,118 @@
+//! Variable interpolation logic.
+//!
+//! Resolves variable placeholders (`{{ var }}`) using values from the
+//! context maps, environment variables, or other configurations.
+//! 
+//! # Example
+//! 
+//! ```rust
+//! use floodr::parsing::interpolator::Interpolator;
+//! use floodr::engine::benchmark::Context;
+//! use serde_json::Value;
+//! 
+//! let data = r#"{"url": "http://localhost:4896/", "status":200 }"#;
+//! let json_data: Value = serde_json::from_str(data).expect("Failed to parse");
+//!
+//! let mut ctx:Context = Context::new();
+//!
+//! ctx.insert("gotham".to_string(), json_data);
+//! let interpolator:Interpolator = Interpolator::new(&ctx);
+//!
+//! println!("{}", interpolator.resolve("The gotham object has\n\turl: {{gotham.url}}\n\tstatus: {{gotham.status}}",true));
+//! ```
+
 use colored::*;
 use lazy_static::lazy_static;
 use regex::{Captures, Regex};
 use serde_json::json;
 
-use crate::benchmark::Context;
+use crate::engine::benchmark::Context;
 
 static INTERPOLATION_PREFIX: &str = "{{";
 static INTERPOLATION_SUFFIX: &str = "}}";
 
 lazy_static! {
   pub static ref INTERPOLATION_REGEX: Regex = {
-    let regexp = format!("{}{}{}", regex::escape(INTERPOLATION_PREFIX), r" *([a-zA-Z]+[a-zA-Z\-\._\$0-9\[\]]*) *", regex::escape(INTERPOLATION_SUFFIX));
+    let regexp = format!("{}{}{}", regex::escape(INTERPOLATION_PREFIX), r#" *([a-zA-Z]+[a-zA-Z\-\._\$0-9\[\]"']*) *"#, regex::escape(INTERPOLATION_SUFFIX));
 
     Regex::new(regexp.as_str()).unwrap()
   };
 }
 
+/// A utility struct that performs placeholder interpolation within strings.
+///
+/// It uses a `Context` (JSON map) and environment variables as sources for
+/// resolving placeholders like `{{ name }}` or `{{ nested.property }}`.
 pub struct Interpolator<'a> {
   context: &'a Context,
 }
 
 impl<'a> Interpolator<'a> {
+  /// Creates a new `Interpolator` with the given context.
+  ///
+  /// # Arguments
+  ///
+  /// - `context` (`&'a Context`) - The context containing variable values.
+  ///
+  /// # Returns
+  ///
+  /// - `Interpolator<'a>` - A new `Interpolator` instance.
+  /// 
+  /// # Example
+  /// 
+  /// ```rust
+  /// use floodr::parsing::interpolator::Interpolator;
+  /// use floodr::engine::benchmark::Context;
+  /// use serde_json::Value;
+  /// 
+  /// let data = r#"{"url": "http://localhost:4896/", "status":200 }"#;
+  /// let json_data: Value = serde_json::from_str(data).expect("Failed to parse");
+  ///
+  /// let mut ctx:Context = Context::new();
+  ///
+  /// ctx.insert("gotham".to_string(), json_data);
+  /// let interpolator:Interpolator = Interpolator::new(&ctx);
+  ///
+  /// println!("{}", interpolator.resolve("The gotham object has\n\turl: {{gotham.url}}\n\tstatus: {{gotham.status}}",true));
+  /// ```
   pub fn new(context: &'a Context) -> Interpolator<'a> {
     Interpolator {
       context,
     }
   }
 
+  /// Resolves all placeholders in a string.
+  ///
+  /// # Arguments
+  ///
+  /// - `url` (`&str`) - The input string containing potential placeholders.
+  /// - `strict` (`bool`) - If true, panics on unknown variables. Otherwise, resolves to empty strings.
+  ///
+  /// # Returns
+  ///
+  /// - `String` - The interpolated string.
+  ///
+  /// # Panics
+  ///
+  /// - Panics in strict mode if a variable cannot be resolved.
+  ///
+  /// # Examples
+  ///
+  /// ```rust
+  /// use floodr::parsing::interpolator::Interpolator;
+  /// use floodr::engine::benchmark::Context;
+  /// use serde_json::Value;
+  /// 
+  /// let data = r#"{"url": "http://localhost:4896/", "status":200 }"#;
+  /// let json_data: Value = serde_json::from_str(data).expect("Failed to parse");
+  ///
+  /// let mut ctx:Context = Context::new();
+  ///
+  /// ctx.insert("gotham".to_string(), json_data);
+  /// let interpolator:Interpolator = Interpolator::new(&ctx);
+  ///
+  /// println!("{}", interpolator.resolve("The gotham object has\n\turl: {{gotham.url}}\n\tstatus: {{gotham.status}}",true));
+  /// ```
   pub fn resolve(&self, url: &str, strict: bool) -> String {
     INTERPOLATION_REGEX
       .replace_all(url, |caps: &Captures| {
@@ -41,6 +127,9 @@ impl<'a> Interpolator<'a> {
         }
 
         if strict {
+          let msg = format!("\n{}{}{}", "Unknown".red(), format!(" '{}' ", &capture).red(), "variable!".red(),);
+          eprintln!("{}", msg);
+          eprintln!("Context: {:#?}", self.context);
           panic!("Unknown '{}' variable!", &capture);
         }
 
@@ -51,6 +140,15 @@ impl<'a> Interpolator<'a> {
       .to_string()
   }
 
+  /// Resolves a variable from system environment variables.
+  ///
+  /// # Arguments
+  ///
+  /// - `value` (`&str`) - The name of the environment variable.
+  ///
+  /// # Returns
+  ///
+  /// - `Option<String>` - The value if found, otherwise `None`.
   fn resolve_environment_interpolation(&self, value: &str) -> Option<String> {
     match std::env::vars().find(|tuple| tuple.0 == value) {
       Some(tuple) => Some(tuple.1),
@@ -58,9 +156,20 @@ impl<'a> Interpolator<'a> {
     }
   }
 
+  /// Resolves a variable from the stored context map using JSON pointer logic.
+  ///
+  /// This supports dot notation and array indexing for nested properties.
+  ///
+  /// # Arguments
+  ///
+  /// - `value` (`&str`) - The context key or path (e.g., "auth.token").
+  ///
+  /// # Returns
+  ///
+  /// - `Option<String>` - The resolved value formatted as a string if found, otherwise `None`.
   fn resolve_context_interpolation(&self, value: &str) -> Option<String> {
-    // convert "." and "[" to "/" and "]" to "" to look like a json pointer
-    let val: String = format!("/{}", value.replace(['.', '['], "/").replace(']', ""));
+    // convert "." and "[" to "/" and "]" and quotes to "" to look like a json pointer
+    let val: String = format!("/{}", value.replace(['.', '['], "/").replace([']', '"', '\''], ""));
 
     // force the context into a Value, and acess by pointer
     if let Some(item) = json!(self.context).pointer(&val).to_owned() {
@@ -120,6 +229,12 @@ mod tests {
     assert_eq!(interpolator.resolve("{{ Nested.this.that.those[2].deee.eeee }}", true), "eeep".to_string());
     assert_eq!(interpolator.resolve("{{ ArrayNested[0].a[1].aaa[0].aaaa }}", true), "123".to_string());
     assert_eq!(interpolator.resolve("{{ ArrayNested[0].a[1].aaa[0].$aaaa }}", true), "$123".to_string());
+
+    // Add tests with quotes for dict accesses
+    context.insert(String::from("dict_with_quotes"), json!({"x-backend": "Flask", "other_key": "value"}));
+    let interpolator2 = Interpolator::new(&context);
+    assert_eq!(interpolator2.resolve(r#"{{ dict_with_quotes["x-backend"] }}"#, true), "Flask".to_string());
+    assert_eq!(interpolator2.resolve(r#"{{ dict_with_quotes['other_key'] }}"#, true), "value".to_string());
   }
 
   #[test]

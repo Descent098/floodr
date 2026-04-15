@@ -1,0 +1,404 @@
+---
+title: Advanced Usage
+sidebar:
+    order: 4
+banner:
+  content: |
+    If you haven't yet read it <a href="/floodr/getting-started/basic-usage">check out the basic usage guide</a> before continuing
+next: 
+  label: "Benchmark Reference"
+  link: "/floodr/benchmark-reference"
+---
+import { Aside } from '@astrojs/starlight/components';
+import { Code } from '@astrojs/starlight/components';
+
+We can do more than just statelessly make requests. Floodr benchmarks can be configured to do various checks directly from the configuration file.
+
+
+## Interpolation
+
+When creating an action you can assign it a to a variable:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+plan:
+  # Setup request and assign it to the variable gothamServer
+  - name: Fetch route
+    request:
+      url: /
+    assign: gothamServer`}/>
+
+
+
+The variable can then be used later to access information about the response. 
+
+## Assertion Driven Tests
+
+
+There are many different types of [actions](/floodr/benchmark-reference/actions) we can use to help test with. For example we could use an [assert](/floodr/benchmark-reference/actions) to cause the test to crash if a certain confition is not met. For example, let's say we want to make sure every request returns a 200 status code: 
+
+<Code title="benchmark.yml" lang="yaml" code={
+`base: 'http://localhost:4896'
+plan:
+  # Setup request and assign it to the variable gothamServer
+  - name: Fetch route
+    request:
+      url: /
+    assign: gothamServer
+  # Begin Assertions
+  - name: Assert request response code
+    assert:
+      key: gothamServer.status
+      value: 200`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+### Plans are Sequential
+
+**The plan in the benchmark is run step-by-step on each iteration**, so you cannot combine assignments and assertions in 1 action:
+
+
+<Code title="benchmark.yml" lang="yaml" mark={["assert: # WILL CAUSE A PANIC", "key: gothamServer.status", "value: 200"]} code={
+`base: 'http://localhost:4896'
+plan:
+  # Setup request and assign it to the variable gothamServer
+  - name: Fetch route
+    request:
+      url: /
+    assign: gothamServer
+    assert: # WILL CAUSE A PANIC
+      key: gothamServer.status
+      value: 200`}/>
+
+<Aside type="danger">The above file causes a panic</Aside>
+
+<Code lang="bash" frame="terminal" code={`$> floodr --stats
+Concurrency 2
+Iterations 10
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               gothamServer.status=200?
+
+Unknown 'gothamServer.status' variable!
+
+thread 'main' (51808) panicked at src\interpolator.rs:84:11:
+Unknown 'gothamServer.status' variable!
+note: run with \`RUST_BACKTRACE=1\` environment variable to display a backtrace`}/>
+
+
+The same is true if you define the assignment after the assertion:
+
+
+<Code title="benchmark.yml" lang="yaml" mark={["- name: Assert response","assert: # WILL CAUSE A PANIC", "key: gothamServer.status", "value: 200"]} code={`
+base: 'http://localhost:4896'
+plan:
+  - name: Assert response
+    assert: # WILL CAUSE A PANIC
+      key: gothamServer.status
+      value: 200
+  # Setup request and assign it to the variable gothamServer
+  - name: Fetch route
+    request:
+      url: /
+    assign: gothamServer`}/>
+
+<Aside type="danger">The above file causes a panic</Aside>
+
+<Code lang="bash" frame="terminal" code={`$>floodr --stats
+Concurrency 2
+Iterations 10
+Rampup 0
+Base URL http://localhost:4896
+
+Assert response           gothamServer.status=200?
+
+Unknown 'gothamServer.status' variable!
+
+thread 'main' (57600) panicked at src\interpolator.rs:84:11:
+Unknown 'gothamServer.status' variable!
+note: run with \`RUST_BACKTRACE=1\` environment variable to display a backtrace
+`}/>
+
+### Variables are Re-Usable
+
+But, you can use the assigned variable in multiple actions after it's registered:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+plan:
+  - name: Fetch route
+    request:
+      url: /
+    assign: gotham
+  - name: Assert request response code
+    assert:
+      key: gotham.status
+      value: 200
+  - name: Assert x-backend header is gotham
+    assert:
+      key: gotham.headers["x-backend"]
+      value: gotham
+  - name: Assert URL
+    assert:
+      key: gotham.url
+      value: http://localhost:4896/
+  - name: Assert version is http 1.1
+    assert:
+      key: gotham.version
+      value: http/1.1
+`}/>
+
+<Code lang="bash" frame="terminal" code={`$>floodr --stats
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/ 200 OK 331ms
+Assert request response code gotham.status=200?
+Assert x-backend header is gotham gotham.headers["x-backend"]=gotham?
+Assert URL                gotham.url=http://localhost:4896/?
+Assert version is http 1.1 gotham.version=http/1.1?
+
+Fetch route               Total requests            1
+Fetch route               Successful requests       1
+Fetch route               Failed requests           0
+Fetch route               Median time per request   332ms
+Fetch route               Average time per request  331ms
+Fetch route               Sample standard deviation 0ms
+Fetch route               99.0'th percentile        332ms
+Fetch route               99.5'th percentile        332ms
+Fetch route               99.9'th percentile        332ms
+
+Time taken for tests      0.3 seconds
+Total requests            1
+Successful requests       1
+Failed requests           0
+Requests per second       3.02 [#/sec]
+Median time per request   332ms
+Average time per request  331ms
+Sample standard deviation 0ms
+99.0'th percentile        332ms
+99.5'th percentile        332ms
+99.9'th percentile        332ms
+`}/>
+
+
+## Expandables
+
+On top of normal actions there are various [expandables](/floodr/benchmark-reference/expandables/) that allow you to instantiate multiple requests from a single action. 
+
+<Aside type="caution">
+  Keep in mind actions run **every** iteration. So, if one action repeats 10 times, and you have 1,000 iterations you will have 10,000 requests
+</Aside>
+
+For example if I wanted to hit every user ID in a range from 1 to 10 I could use:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch route
+    request:
+      url: /{{ item }}
+    assign: gothamServer
+    with_items_range:
+      start: 1
+      stop: 10
+      step: 1
+  - name: Assert requests succeed
+    assert:
+      key: gothamServer.status
+      value: 200`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+serde = "1.0.228"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::router::response::StaticResponseExtender;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::{State, StateData};
+use gotham::router::builder::*;
+use gotham::router::Router;
+use gotham::prelude::FromState;
+use serde::Deserialize;
+use mime;
+
+#[derive(Deserialize, StateData, StaticResponseExtender)]
+struct UserID {
+    id: u32,
+}
+
+fn hello(mut state: State) -> (State, Response<Body>) {
+
+    let UserID { id } = UserID::take_from(&mut state);
+
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::APPLICATION_JSON,
+        format!("{{\"id\":{}}},{{\"userid\":{}}}", id,id),
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/:id").with_path_extractor::<UserID>().to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    let _ = gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+
+<Code lang="bash" frame="terminal" code={`$>floodr --stats
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Fetch route               http://localhost:4896/1 200 OK 314ms
+Fetch route               http://localhost:4896/2 200 OK 0ms
+Fetch route               http://localhost:4896/3 200 OK 0ms
+Fetch route               http://localhost:4896/4 200 OK 0ms
+Fetch route               http://localhost:4896/5 200 OK 0ms
+Fetch route               http://localhost:4896/6 200 OK 0ms
+Fetch route               http://localhost:4896/7 200 OK 0ms
+Fetch route               http://localhost:4896/8 200 OK 0ms
+Fetch route               http://localhost:4896/9 200 OK 0ms
+Fetch route               http://localhost:4896/10 200 OK 0ms
+Assert requests succeed   gothamServer.status=200?
+
+Fetch route               Total requests            10
+Fetch route               Successful requests       10
+Fetch route               Failed requests           0
+Fetch route               Median time per request   0ms
+Fetch route               Average time per request  32ms
+Fetch route               Sample standard deviation 94ms
+Fetch route               99.0'th percentile        315ms
+Fetch route               99.5'th percentile        315ms
+Fetch route               99.9'th percentile        315ms
+
+Time taken for tests      0.3 seconds
+Total requests            10
+Successful requests       10
+Failed requests           0
+Requests per second       31.60 [#/sec]
+Median time per request   0ms
+Average time per request  32ms
+Sample standard deviation 94ms
+99.0'th percentile        315ms
+99.5'th percentile        315ms
+99.9'th percentile        315ms`}/>
+
+## Environment variables
+
+You can also use environment variables directly in your requests:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+iterations: 1 
+
+plan:
+  - name: Fetch route based on environment variable
+    request:
+      url: /{{ HOMEURL }}
+`}/>
+
+<Aside type="danger">Be careful not to leak important information accidentally with this feature</Aside>
+
+## More Features
+
+There are other features available, you can find more detailed information and a list of the available actions in the [benchmark reference](/floodr/benchmark-reference) section.

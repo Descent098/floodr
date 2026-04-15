@@ -1,18 +1,101 @@
+//! Range driven request expansion.
+//!
+//! Allows dispatching multiple requests by iterating over an integer range.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use floodr::engine::benchmark::Benchmark;
+//! use floodr::expandable::multi_iter_request;
+//! use serde_yaml::Value;
+//!
+//! let mut benchmark = Benchmark::new();
+//! 
+//! let item = serde_yaml::from_str("
+//! name: Sequential requests
+//! request:
+//!   url: /api/items/{{ item }}
+//! with_items_range:
+//!   start: 1
+//!   stop: 10
+//! ").unwrap();
+//! 
+//! multi_iter_request::expand(&item, &mut benchmark);
+//! ```
+
 use std::convert::TryInto;
 
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use serde_yaml::{Number, Value};
 
-use crate::interpolator::INTERPOLATION_REGEX;
+use crate::parsing::interpolator::INTERPOLATION_REGEX;
 
 use crate::actions::Request;
-use crate::benchmark::Benchmark;
+use crate::engine::benchmark::{ActionItem, Benchmark};
 
+/// Checks if the provided YAML item represents a range-expanded request action.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item to check
+///
+/// # Returns
+///
+/// - `bool` - True if the item is a range-expanded request action
+///
+/// # Examples
+///
+/// ```rust
+/// use serde_yaml::Value;
+/// use floodr::expandable::multi_iter_request;
+///
+/// let item = serde_yaml::from_str("
+/// request:
+///   url: /api/{{ item }}
+/// with_items_range:
+///   start: 1
+///   stop: 5
+/// ").unwrap();
+/// 
+/// assert!(multi_iter_request::is_that_you(&item));
+/// ```
 pub fn is_that_you(item: &Value) -> bool {
   item.get("request").and_then(|v| v.as_mapping()).is_some() && item.get("with_items_range").and_then(|v| v.as_mapping()).is_some()
 }
 
+/// Expands a range-expanded request into multiple `Request` actions.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item representing the range-expanded request
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+///
+/// # Panics
+///
+/// - Panics if `start`, `step`, or `stop` contain interpolation markers `{{ ... }}`
+/// - Panics if `start` or `stop` properties are missing
+/// - Panics if `start`, `step`, or `stop` are not numbers
+///
+/// # Examples
+///
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
+/// use floodr::expandable::multi_iter_request;
+/// use serde_yaml::Value;
+///
+/// let mut benchmark = Benchmark::new();
+/// 
+/// let item = serde_yaml::from_str("
+/// name: Sequential requests
+/// request:
+///   url: /api/items/{{ item }}
+/// with_items_range:
+///   start: 1
+///   stop: 10
+/// ").unwrap();
+/// 
+/// multi_iter_request::expand(&item, &mut benchmark);
+/// ```
 pub fn expand(item: &Value, benchmark: &mut Benchmark) {
   if let Some(with_iter_items) = item.get("with_items_range").and_then(|v| v.as_mapping()) {
     let lstart = Value::String("start".into());
@@ -49,12 +132,10 @@ pub fn expand(item: &Value, benchmark: &mut Benchmark) {
     if stop > start && start > 0 {
       let mut with_items: Vec<i64> = (start..stop).step_by(step as usize).collect();
 
-      if let Some(shuffle) = item.get("shuffle").and_then(|v| v.as_bool()) {
-        if shuffle {
-          let mut rng = thread_rng();
+      if let Some(shuffle) = item.get("shuffle").and_then(|v| v.as_bool()) && shuffle {
+          let mut rng = rand::rng();
           with_items.shuffle(&mut rng);
         }
-      }
 
       if let Some(pick) = item.get("pick").and_then(|v| v.as_i64()) {
         with_items.truncate(pick.try_into().expect("pick can't be larger than size of range"))
@@ -63,7 +144,14 @@ pub fn expand(item: &Value, benchmark: &mut Benchmark) {
       for (index, value) in with_items.iter().enumerate() {
         let index = index as u32;
 
-        benchmark.push(Box::new(Request::new(item, Some(Value::Number(Number::from(*value))), Some(index))));
+        let mut source = item.clone();
+        if let Some(map) = source.as_mapping_mut() {
+          map.insert(Value::String("with_item".into()), Value::Number(Number::from(*value)));
+          map.insert(Value::String("index".into()), Value::Number(Number::from(index)));
+          map.remove(Value::String("with_items_range".into()));
+        }
+
+        benchmark.push(ActionItem::new(Box::new(Request::new(item, Some(Value::Number(Number::from(*value))), Some(index))), source));
       }
     }
   }
@@ -76,7 +164,7 @@ mod tests {
   #[test]
   fn expand_multi_range() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\nwith_items_range:\n  start: 2\n  step: 2\n  stop: 20";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -89,7 +177,7 @@ mod tests {
   #[test]
   fn expand_multi_range_should_limit_requests_using_the_pick_option() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\npick: 3\nwith_items_range:\n  start: 2\n  step: 2\n  stop: 20";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -103,7 +191,7 @@ mod tests {
   #[should_panic]
   fn invalid_expand() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\nwith_items_range:\n  start: 1\n  step: 2\n  stop: foo";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -114,7 +202,7 @@ mod tests {
   #[should_panic]
   fn runtime_expand() {
     let text = "---\nname: foobar\nrequest:\n  url: /api/{{ item }}\nwith_items_range:\n  start: 1\n  step: 2\n  stop: \"{{ memory }}\"";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 

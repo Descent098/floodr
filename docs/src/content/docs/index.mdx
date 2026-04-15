@@ -1,0 +1,39 @@
+---
+title: Welcome to Floodr
+description: floodr is a HTTP load testing application written in Rust. The main goal for this project is to build a really lightweight tool as alternative to other that require JVM and other stuff.
+template: splash
+hero:
+  tagline: A configurable, simple rust-based HTTP load testing system
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Getting Started
+      link: /floodr/getting-started
+      icon: right-arrow
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Next steps
+
+<CardGrid stagger>
+	<Card title="High Performance" icon="seti:clock">
+		Performant, allowing you to stress your services without hitting language limitations
+	</Card>
+	<Card title="Easy to Use" icon="open-book">
+		Get started [quickly and easily](/floodr/getting-started/basic-usage)
+	</Card>
+	<Card title="YAML-based benchmarking plans" icon="add-document">
+		Fully configurable testing plans with a [simple syntax](/floodr/benchmark-reference/)
+	</Card>
+	<Card title="Easy to Use CLI" icon="seti:shell">
+		A simple [CLI](/floodr/cli) with sane defaults to get running quickly
+	</Card>
+	<Card title="API Usage" icon="seti:rust">
+		Want to integrate Floodr into your own project, the [API](/floodr/api-ref/floodr) is the way to go
+	</Card>
+</CardGrid>
+
+## Demo
+
+<script src="https://asciinema.org/a/NfDR2EDUYkyH57aO.js" id="asciicast-NfDR2EDUYkyH57aO" async="true"></script>

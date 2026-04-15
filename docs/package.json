@@ -1,0 +1,27 @@
+{
+  "name": "docs",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.38.2",
+    "@astrojs/svelte": "^8.0.4",
+    "astro": "^6.0.1",
+    "astro-mermaid": "^2.0.1",
+    "rehype-mathjax": "^7.1.0",
+    "remark-math": "^6.0.0",
+    "sharp": "^0.34.2",
+    "starlight-contextual-menu": "^0.1.5",
+    "starlight-sidebar-swipe": "^0.2.0",
+    "starlight-sidebar-topics": "^0.7.1",
+    "starlight-ui-tweaks": "^0.2.2",
+    "svelte": "^5.55.2",
+    "typescript": "^5.9.3"
+  }
+}

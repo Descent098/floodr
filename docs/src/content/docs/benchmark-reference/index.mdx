@@ -1,0 +1,232 @@
+---
+title: Basics
+banner:
+  content: |
+    If you haven't yet read it <a href="/floodr/getting-started/basic-usage">check out the basic usage guide</a> before continuing
+prev:
+  link: /floodr/getting-started/basic-usage
+  label: Basic Usage
+---
+import { Aside, Code, Card } from '@astrojs/starlight/components';
+import RuntimeCalc from "../../../components/runtime-calc.svelte"
+
+This section will outline the options available when creating your benchmark file.
+
+<Aside type={"caution"}>
+If you haven't yet read it <a href="/floodr/getting-started/basic-usage">check out the basic usage guide</a> before continuing
+</Aside>
+
+## Terms & Format
+
+When using the reference documentation here are some terms that are useful to know about. The benchmark file itself is a [YAML](https://docs.ansible.com/projects/ansible/latest/reference_appendices/YAMLSyntax.html) file that contains the following:
+
+| Term | Description | Required |
+|------|-------------|----------|
+| **Plan** | The plan is the part of the benchmark that contains all the actions. Runs top-down, so **action order matters** | Yes |
+| **Action** | An individual step taken by an individual iteration  | At least 1 |
+| **Expandable** | An attribute applied to an action that causes it to expand to multiple requests | Optional per [request](/floodr/benchmark-reference/actions/requests) action | 
+| **Config** | All the data not associated with the plan in the benchmark (base, concurrency, iteration, rampup, ect.) | Yes |
+| **Base** |  The domain to run the benchmark against (e.g `http://localhost:4896`) | yes | 
+| **Concurrency** |  Number of threads to run. Each thread runs an iteration, then moves on to the next iteration. **Be careful** when setting this high, you can freeze up or slow down your system. | optional (default 1)| 
+| **Iterations** |  The number of iterations to run. Essentially the number of times that the plan will be re-run | optional (default 1) | 
+| **Rampup** |  How much extra waiting time to add between each iteration so they don't all start at once. When defined it increases the delay to start an iteration by `rampup`/`iterations`, so a rampup of 50 with 5 iterations would give you 5 seconds between each iteration | optional (default 0) | 
+
+So the file format looks comething like this:
+
+<Code title="schema.yaml" lang="yaml" code={`
+# Config
+base: http://example.domain
+concurrency: 1
+iterations: 1
+rampup: 0
+
+plan: # Plan
+  - name: Action name
+    action_type:
+      action_fields
+    expandables:
+      expandable_fields`}/>
+
+<Aside type="note">The above file will not actually work, it's just an example of the schema, a real example is below</Aside>
+
+Here is an example file
+
+<Code title="benchmark.yml" lang="yaml" code={`
+# Config section
+base: 'http://localhost:4896' # The domain we want to hit
+concurrency: 2 # Number of threads to run
+iterations: 10 # Number of times to run the actions defined in plan
+
+# The plan, will run the number of times defined by iterations
+plan: # An array of actions to take
+  - name: Fetch route
+    request:
+      url: /
+    assign: gothamServer`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham_hello"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+mime = "0.3"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_response;
+use gotham::hyper::{Body, Response, StatusCode};
+use gotham::state::State;
+use gotham::router::builder::*;
+use gotham::router::Router;
+use mime;
+
+fn hello(state: State) -> (State, Response<Body>) {
+    let mut response = create_response(
+        &state,
+        StatusCode::OK,
+        mime::TEXT_PLAIN,
+        "Hello World!",
+    );
+
+    response
+        .headers_mut()
+        .insert("x-backend", "gotham".parse().unwrap());
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/").to(hello);
+    })
+}
+
+fn main() {
+    println!("Listening on http://0.0.0.0:4896");
+    gotham::start("0.0.0.0:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+To run our file we would then run:
+
+```bash
+floodr benchmark.yml
+```
+
+## FAQ
+
+<details>
+  <summary>How does concurrency effect iterations?</summary>
+
+It doesn't, but it does effect runtime. In general you can imagine the run process as a pool of workers that is `concurency` sized. The pool will pop scheduled `iteration`s until there's none left, re-using the threads as it goes. Below illustrates `concurrency == 2` and `iterations == 2`:
+
+```mermaid
+flowchart TD
+    A[["Benchmark Run"]] --> B[["Create N iterations"]]
+    B --> C[["Worker Pool"]]
+
+    C --> D1["Worker 1"]
+    C --> D3["Worker 2"]
+
+    D1 --> E1{{"Iteration #1"}}
+    D3 --> E3{{"Last Iteration"}}
+
+    E1 --> F1["Run Plan top-to-bottom"]
+    E3 --> F3["Run Plan top-to-bottom"]
+
+    F1 --> G1(("Action 1<br/>May produce 0..N HTTP requests"))
+    F3 --> G3(("Action 1<br/>May produce 0..N HTTP requests"))
+
+    G1 --> I1(("Other actions (if specified)<br/>May produce 0..N HTTP requests"))
+    G3 --> I3(("Other actions (if specified)<br/>May produce 0..N HTTP requests"))
+
+    I1 --> M1{{"Iteration complete"}}
+    I3 --> M3{{"Iteration complete"}}
+
+    M1 -- Informs pool the iteration is complete --> D[["Worker Pool"]]
+    M3 -- Informs pool the iteration is complete --> D
+    
+    D--When all workers are done-->E[["Move on to generating statistics and cleanup"]]
+```
+
+In general if there are $$i$$ iterations and concurency == $$c$$ :
+
+```mermaid
+flowchart TD
+    A[["Benchmark Run"]] --> B[["Create i iterations"]]
+    B --> C[["Worker Pool"]]
+
+    C --> D1["Worker 1"]
+    C --> D3["Up to Worker #c"]
+
+    D1 --> E1{{"Iteration #1"}}
+    D3 --> E3{{"Iteration"}}
+
+    E1 --> F1["Run Plan top-to-bottom"]
+    E3 --> F3["Run Plan top-to-bottom"]
+
+    F1 --> G1(("Action 1<br/>May produce 0..N HTTP requests"))
+    F3 --> G3(("Action 1<br/>May produce 0..N HTTP requests"))
+
+    G1 --> I1(("Other actions (if specified)<br/>May produce 0..N HTTP requests"))
+    G3 --> I3(("Other actions (if specified)<br/>May produce 0..N HTTP requests"))
+
+    I1 --> M1{{"Iteration complete"}} --> Z{Are there unfinished iterations?}
+    I3 --> M3{{"Iteration complete"}} --> Z
+
+    Z -- yes --> Q[Worker picks next unfinished iteration] --> C
+    Z -- No --> T[[clean up worker]] -- When all workers done --> E[["Move on to generating statistics and cleanup"]]
+```
+
+</details>
+<details>
+  <summary>Can I set a test to run for a set time period?</summary>
+  No, not explicitly. The amount of time a benchmark runs for is a product of all of the other parameters. Below is a calculator to help work it out:
+
+<Card>
+<RuntimeCalc client:load/>
+</Card>
+  
+  
+  You can approximately achieve this using the following formula:
+
+
+<div style="font-size-adjust: .75;">total time $$\approx \frac{z*i}{c-i}$$</div>
+
+- z = approximate time taken for each iteration
+  - $$z\approx s+(((n - 1)\times d) +  (n\times a))$$
+- n = Number of requests per iteration
+  - Is usually the number of request actions, but remember to include every [expandable](/floodr/benchmark-reference/expandables) item as another request when calculating
+- d = delay between request (if a delay action(s) exists)
+  - Can also set in benchmark [directly](/floodr/benchmark-reference/actions/delay)
+- i = number of iterations i$$\geq 1$$
+- s = Delay at the start of each iteration
+  - Can be calculated if using a `rampup` value using $$d_{iteration} = \frac{rampup}{i}$$
+- a = Average time taken for request
+  - An approximation of how much time it takes to actually send data to the server, and receive a response. The true value varies per request
+- c = concurrency, or the number of threads the benchmark makes available c$$\leq$$i
+
+
+</details>
+<details>
+  <summary>Why can't I set `concurrency` higher than `iterations`?</summary>
+  This will cause the program to exit because it makes no sense, you're essentially asking the system to create wasted threads. While it can be argued it shouldn't necessarily panic, this was chosen because there's no good reason to do it.
+</details>

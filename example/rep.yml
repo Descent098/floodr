@@ -1,0 +1,12 @@
+# An example report
+base: http://localhost:4896
+baseline:
+- duration: 92.64867
+  name: Fetch route
+  status: 200
+plan:
+- assign: gothamServer
+  name: Fetch route
+  request:
+    url: /
+

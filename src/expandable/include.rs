@@ -1,19 +1,132 @@
+//! Include action expansion handling.
+//!
+//! Handles expanding `include: file.yml` directives from benchmark plans.
+//! This allows for modularizing benchmark files and reusing parts of a plan.
+//!
+//! # Examples
+//!
+//! With the files
+//! 
+//!`single_request.yml`
+//! ```yaml
+//! # An example of a simple single request
+//! base: http://localhost:4896
+//! 
+//! plan:
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
+//! ```
+//! and
+//! 
+//! `subcomments.yml`
+//! 
+//! ```yaml
+//! - name: Fetch sub comments
+//!   request:
+//!     url: /api/subcomments.json
+//! ```
+//! 
+//! We can do:
+//! 
+//! ```rust
+//! use floodr::engine::benchmark::Benchmark;
+//! use floodr::parsing::tags::Tags;
+//! use floodr::expandable::include;
+//! use serde_yaml::Value;
+//!
+//! let mut benchmark = Benchmark::new();
+//! let item = serde_yaml::from_str("include: subcomments.yml").unwrap(); // This file is also in the /examples folder
+//! include::expand("example/single_request.yml", &item, &mut benchmark, &Tags::new(None, None));
+//! ```
+
 use serde_yaml::Value;
 use std::path::Path;
 
-use crate::interpolator::INTERPOLATION_REGEX;
+use crate::parsing::interpolator::INTERPOLATION_REGEX;
 
 use crate::actions;
-use crate::benchmark::Benchmark;
+use crate::engine::benchmark::{ActionItem, Benchmark};
 use crate::expandable::{include, multi_csv_request, multi_file_request, multi_iter_request, multi_request};
-use crate::tags::Tags;
+use crate::parsing::tags::Tags;
 
-use crate::reader;
+use crate::parsing::reader;
 
+/// Checks if the provided YAML item represents an `include` action.
+///
+/// # Arguments
+///
+/// - `item` (`&Value`) - The YAML item to check
+///
+/// # Returns
+///
+/// - `bool` - True if the item is an include directive
+///
+/// # Examples
+///
+/// ```rust
+/// use serde_yaml::Value;
+/// use floodr::expandable::include;
+///
+/// let item = serde_yaml::from_str("include: auth.yml").unwrap();
+/// assert!(include::is_that_you(&item));
+/// ```
 pub fn is_that_you(item: &Value) -> bool {
   item.get("include").and_then(|v| v.as_str()).is_some()
 }
 
+/// Expands an `include` action by reading the specified file and adding its contents to the benchmark.
+///
+/// # Arguments
+///
+/// - `parent_path` (`&str`) - The path of the parent file, used to resolve relative paths
+/// - `item` (`&Value`) - The YAML item representing the include action
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+/// - `tags` (`&Tags`) - The tags to filter the included items
+///
+/// # Panics
+///
+/// - Panics if the `include` path contains interpolation markers `{{ ... }}`
+///
+/// # Examples
+/// 
+/// With the files
+/// 
+/// `single_request.yml`
+/// 
+/// ```yaml
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// and
+/// 
+/// `subcomments.yml`
+/// 
+/// ```yaml
+/// - name: Fetch sub comments
+///   request:
+///     url: /api/subcomments.json
+/// ```
+/// 
+/// We can do:
+/// 
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
+/// use floodr::parsing::tags::Tags;
+/// use floodr::expandable::include;
+/// use serde_yaml::Value;
+///
+/// let mut benchmark = Benchmark::new();
+/// let item = serde_yaml::from_str("include: subcomments.yml").unwrap(); // This file is also in the /examples folder
+/// include::expand("example/single_request.yml", &item, &mut benchmark, &Tags::new(None, None));
+/// ```
 pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark, tags: &Tags) {
   let include_path = item.get("include").and_then(|v| v.as_str()).unwrap();
 
@@ -27,6 +140,43 @@ pub fn expand(parent_path: &str, item: &Value, benchmark: &mut Benchmark, tags: 
   expand_from_filepath(final_path, benchmark, None, tags);
 }
 
+/// Reads a benchmark file from a path and expands its contents into the provided benchmark.
+///
+/// This handles nested includes and various action types (request, delay, exec, etc.).
+///
+/// # Arguments
+///
+/// - `parent_path` (`&str`) - The path of the file to read
+/// - `benchmark` (`&mut Benchmark`) - The benchmark to add the expanded actions to
+/// - `accessor` (`Option<&str>`) - Optional YAML accessor to read a sub-property
+/// - `tags` (`&Tags`) - The tags to filter the items
+///
+/// # Panics
+///
+/// - Panics if it encounters an unknown action type
+///
+/// # Examples
+/// 
+/// With the file:
+/// 
+/// `subcomments.yml`
+/// 
+/// ```yaml
+/// - name: Fetch sub comments
+///   request:
+///     url: /api/subcomments.json
+/// ```
+/// 
+/// We can do
+///
+/// ```rust
+/// use floodr::engine::benchmark::Benchmark;
+/// use floodr::parsing::tags::Tags;
+/// use floodr::expandable::include;
+///
+/// let mut benchmark = Benchmark::new();
+/// include::expand_from_filepath("example/subcomments.yml", &mut benchmark, None, &Tags::new(None, None));
+/// ```
 pub fn expand_from_filepath(parent_path: &str, benchmark: &mut Benchmark, accessor: Option<&str>, tags: &Tags) {
   let docs = reader::read_file_as_yml(parent_path);
   let items = reader::read_yaml_doc_accessor(&docs[0], accessor);
@@ -51,15 +201,15 @@ pub fn expand_from_filepath(parent_path: &str, benchmark: &mut Benchmark, access
     } else if multi_file_request::is_that_you(item) {
       multi_file_request::expand(parent_path, item, benchmark);
     } else if actions::Delay::is_that_you(item) {
-      benchmark.push(Box::new(actions::Delay::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Delay::new(item, None)), item.clone()));
     } else if actions::Exec::is_that_you(item) {
-      benchmark.push(Box::new(actions::Exec::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Exec::new(item, None)), item.clone()));
     } else if actions::Assign::is_that_you(item) {
-      benchmark.push(Box::new(actions::Assign::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Assign::new(item, None)), item.clone()));
     } else if actions::Assert::is_that_you(item) {
-      benchmark.push(Box::new(actions::Assert::new(item, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Assert::new(item, None)), item.clone()));
     } else if actions::Request::is_that_you(item) {
-      benchmark.push(Box::new(actions::Request::new(item, None, None)));
+      benchmark.push(ActionItem::new(Box::new(actions::Request::new(item, None, None)), item.clone()));
     } else {
       let out_str = serde_yaml::to_string(item).unwrap();
       panic!("Unknown node:\n\n{out_str}\n\n");
@@ -69,14 +219,14 @@ pub fn expand_from_filepath(parent_path: &str, benchmark: &mut Benchmark, access
 
 #[cfg(test)]
 mod tests {
-  use crate::benchmark::Benchmark;
+  use crate::engine::benchmark::Benchmark;
   use crate::expandable::include::{expand, is_that_you};
-  use crate::tags::Tags;
+  use crate::parsing::tags::Tags;
 
   #[test]
   fn expand_include() {
     let text = "---\nname: Include comment\ninclude: comments.yml";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 
@@ -90,7 +240,7 @@ mod tests {
   #[should_panic]
   fn invalid_expand() {
     let text = "---\nname: Include comment\ninclude: {{ memory }}.yml";
-    let docs = crate::reader::read_file_as_yml_from_str(text);
+    let docs = crate::parsing::reader::read_file_as_yml_from_str(text);
     let doc = &docs[0];
     let mut benchmark: Benchmark = Benchmark::new();
 

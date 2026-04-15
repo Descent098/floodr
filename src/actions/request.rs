@@ -1,11 +1,43 @@
+//! Defines the core HTTP Request action and its associated properties.
+//! 
+//! # Examples
+//! 
+//! With a yaml file like:
+//! 
+//! ```yaml
+//! plan:
+//!   - name: Fetch account
+//!     request:
+//!       url: /api/account
+//! ```
+//! 
+//! We get something like
+//! 
+//! ```rust
+//! use floodr::actions::request::Request;
+//! use serde_yaml;
+//! 
+//! let plan_data = r#"
+//! name: Fetch account
+//! request:
+//!   url: /api/account
+//! "#;
+//! let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+//! 
+//! let s = Request::is_that_you(&action_data);
+//! println!("{}", s); // true
+//! 
+//! let s = Request::new(&action_data, None, None);
+//! ```
+
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use colored::Colorize;
 use reqwest::{
-  header::{self, HeaderMap, HeaderName, HeaderValue},
   ClientBuilder, Method, Response,
+  header::{self, HeaderMap, HeaderName, HeaderValue},
 };
 use serde_yaml::Value as YamlValue;
 use std::fmt::Write;
@@ -14,49 +46,180 @@ use std::io::Read;
 use url::Url;
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 
 use crate::actions::{extract, extract_optional};
-use crate::benchmark::{Context, Pool, Reports};
-use crate::config::Config;
-use crate::interpolator;
+use crate::engine::benchmark::{Context, Pool, Reports};
+use crate::parsing::config::Config;
+use crate::parsing::interpolator;
 
 use crate::actions::{Report, Runnable};
 
-static USER_AGENT: &str = "drill";
+static USER_AGENT: &str = "floodr";
 
+/// Defines the body content representation for an HTTP request.
+///
+/// # Notes
+///
+/// - The body can be a string template to be interpolated or binary content
+///
+/// # Examples
+///
+/// ```rust
+/// use floodr::actions::Body;
+///
+/// let body = Body::Template("Hello, world!".to_string());
+/// ```
 #[derive(Clone)]
 pub enum Body {
+  /// The body is a string template to be interpolated.
   Template(String),
+  /// The body is binary content.
   Binary(Vec<u8>),
 }
 
+/// Represents an HTTP request action in a benchmark plan.
+///
+/// # Fields
+///
+/// - `body` (`Option<Body>`) - The body of the request
+/// - `with_item` (`Option<YamlValue>`) - The item to use for the request
+/// - `index` (`Option<u32>`) - The index of the request
+/// - `assign` (`Option<String>`) - The variable to assign the response to
+///
+/// # Examples
+/// 
+/// With a yaml file like:
+/// 
+/// ```yaml
+/// plan:
+///   - name: Fetch account
+///     request:
+///       url: /api/account
+/// ```
+/// 
+/// We get something like
+/// 
+/// ```rust
+/// use floodr::actions::request::Request;
+/// use serde_yaml;
+/// 
+/// let plan_data = r#"
+/// name: Fetch account
+/// request:
+///   url: /api/account
+/// "#;
+/// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+/// 
+/// let s = Request::is_that_you(&action_data);
+/// println!("{}", s); // true
+/// 
+/// let s = Request::new(&action_data, None, None);
+/// ```
 #[derive(Clone)]
 #[allow(dead_code)]
 pub struct Request {
-  name: String,
-  url: String,
-  time: f64,
-  method: String,
-  headers: HashMap<String, String>,
+  name: String,                     // The name of the request action (will show up in CLI)
+  url: String,                      // The URL of the request
+  time: f64,                        // The time to wait before sending the request
+  method: String,                   // The HTTP method of the request
+  headers: HashMap<String, String>, // The headers of the request
   pub body: Option<Body>,
   pub with_item: Option<YamlValue>,
   pub index: Option<u32>,
   pub assign: Option<String>,
 }
 
+/// A helper record to hold data when capturing or assigning response details it assigns what values are available to the context
 #[derive(Serialize, Deserialize)]
 struct AssignedRequest {
-  status: u16,
-  body: Value,
-  headers: Map<String, Value>,
+  status: u16,                 // The HTTP status code of the response.
+  body: Value,                 // The body of the response, parsed as a JSON value.
+  headers: Map<String, Value>, // The headers of the response.
+  url: String,                 // The URL of the request.
+  version: String,             // The HTTP version of the response.
 }
 
 impl Request {
+  /// Checks if the provided YAML item represents a `Request` action.
+  ///
+  /// # Arguments
+  ///
+  /// - `item` (`&YamlValue`) - The YAML item
+  ///
+  /// # Returns
+  ///
+  /// - `bool` - True if the item provided is a request
+  ///
+  /// # Examples
+  /// 
+  /// With a yaml file like:
+  /// 
+  /// ```yaml
+  /// plan:
+  ///   - name: Fetch account
+  ///     request:
+  ///       url: /api/account
+  /// ```
+  /// 
+  /// We get something like
+  /// 
+  /// ```rust
+  /// use floodr::actions::request::Request;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Fetch account
+  /// request:
+  ///   url: /api/account
+  /// "#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// 
+  /// let s = Request::is_that_you(&action_data);
+  /// println!("{}", s); // true
+  /// ```
   pub fn is_that_you(item: &YamlValue) -> bool {
     item.get("request").and_then(|v| v.as_mapping()).is_some()
   }
 
+  /// Creates a new `Request` action from a YAML item.
+  ///
+  /// # Arguments
+  ///
+  /// - `item` (`&YamlValue`) - The YAML item
+  /// - `with_item` (`Option<YamlValue>`) - The item to use for the request
+  /// - `index` (`Option<u32>`) - The index of the request
+  ///
+  /// # Returns
+  ///
+  /// - `Request` - The new `Request` action
+  ///
+  /// # Examples
+  /// 
+  /// With a yaml file like:
+  /// 
+  /// ```yaml
+  /// plan:
+  ///   - name: Fetch account
+  ///     request:
+  ///       url: /api/account
+  /// ```
+  /// 
+  /// We get something like
+  /// 
+  /// ```rust
+  /// use floodr::actions::request::Request;
+  /// use serde_yaml;
+  /// 
+  /// let plan_data = r#"
+  /// name: Fetch account
+  /// request:
+  ///   url: /api/account
+  /// "#;
+  /// let action_data = serde_yaml::from_str(plan_data).expect("Failed to parse");
+  /// 
+  /// let s = Request::new(&action_data, None, None);
+  /// ```
   pub fn new(item: &YamlValue, with_item: Option<YamlValue>, index: Option<u32>) -> Request {
     let name = extract(item, "name");
     let request_val = item.get("request").expect("request field is required");
@@ -79,7 +242,8 @@ impl Request {
         file.read_to_end(&mut buffer).expect("Unable to read file");
         Some(Body::Binary(buffer))
       } else if let Some(hex_str) = request_val.get("body").and_then(|v| v.get("hex")).and_then(|v| v.as_str()) {
-        Some(Body::Binary(hex::decode(hex_str).expect("Invalid hex string")))
+        let cleaned_hex: String = hex_str.chars().filter(|c| !c.is_whitespace()).collect();
+        Some(Body::Binary(hex::decode(&cleaned_hex).expect("Invalid hex string")))
       } else {
         panic!("{} Body must be string, file or hex!!", "WARNING!".yellow().bold());
       }
@@ -103,6 +267,9 @@ impl Request {
       }
     }
 
+    let final_with_item = with_item.or_else(|| item.get("with_item").cloned());
+    let final_index = index.or_else(|| item.get("index").and_then(|v| v.as_u64()).map(|v| v as u32));
+
     Request {
       name,
       url,
@@ -110,20 +277,24 @@ impl Request {
       method,
       headers,
       body,
-      with_item,
-      index,
+      with_item: final_with_item,
+      index: final_index,
       assign,
     }
   }
 
-  fn format_time(tdiff: f64, nanosec: bool) -> String {
-    if nanosec {
-      (1_000_000.0 * tdiff).round().to_string() + "ns"
-    } else {
-      tdiff.round().to_string() + "ms"
-    }
-  }
-
+  /// Sends the configured HTTP request asynchronously.
+  ///
+  /// # Arguments
+  ///
+  /// - `context` (`&mut Context`) - The context to use for the request
+  /// - `pool` (`&Pool`) - The pool to use for the request
+  /// - `config` (`&Config`) - The configuration to use for the request
+  ///
+  /// # Returns
+  ///
+  /// - `(Option<Response>, f64)` - The response and the time it took to send the request
+  ///
   async fn send_request(&self, context: &mut Context, pool: &Pool, config: &Config) -> (Option<Response>, f64) {
     let mut uninterpolator = None;
 
@@ -238,7 +409,7 @@ impl Request {
             status.to_string().yellow()
           };
 
-          println!("{:width$} {} {} {}", interpolated_name.green(), interpolated_base_url.blue().bold(), status_text, Request::format_time(duration_ms, config.nanosec).cyan(), width = 25);
+          println!("{:width$} {} {} {}", interpolated_name.green(), interpolated_base_url.blue().bold(), status_text, (duration_ms.round().to_string() + "ms").cyan(), width = 25);
         }
 
         (Some(response), duration_ms)
@@ -247,6 +418,16 @@ impl Request {
   }
 }
 
+/// Converts YAML data into a JSON structure, typically for templating variables.
+///
+/// # Arguments
+///
+/// - `data` (`YamlValue`) - The YAML value to convert
+///
+/// # Returns
+///
+/// - `Value` - The JSON value
+///
 fn yaml_to_json(data: YamlValue) -> Value {
   match data {
     YamlValue::Bool(b) => json!(b),
@@ -289,8 +470,8 @@ impl Runnable for Request {
       context.insert("item".to_string(), yaml_to_json(self.with_item.clone().unwrap()));
     }
 
-    if self.index.is_some() {
-      context.insert("index".to_string(), json!(self.index.unwrap()));
+    if let Some(idx) = self.index {
+      context.insert("index".to_string(), json!(idx));
     }
 
     let (res, duration_ms) = self.send_request(context, pool, config).await;
@@ -328,14 +509,31 @@ impl Runnable for Request {
             headers.insert(header.to_string(), json!(value.to_str().unwrap()));
           });
 
+          let url = response.url().to_string();
+          let version = format!("{:?}", response.version()).to_lowercase();
+
+          let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_string();
+
           let data = response.text().await.unwrap();
+            
+          let body: Value = if content_type.contains("application/json") {
+            serde_json::from_str(&data).unwrap_or_else(|_| json!(data))
+          } else {
+            json!(data)
+          };
 
-          let body: Value = serde_json::from_str(&data).unwrap_or(serde_json::Value::Null);
-
+          // Add the info about the requst to context
           let assigned = AssignedRequest {
             status,
             body,
             headers,
+            url,
+            version,
           };
 
           let value = serde_json::to_value(assigned).unwrap();
@@ -355,6 +553,7 @@ impl Runnable for Request {
   }
 }
 
+/// Helper to log outgoing HTTP request details.
 fn log_request(request: &reqwest::Request) {
   let mut message = String::new();
   write!(message, "{}", ">>>".bold().green()).unwrap();
@@ -364,6 +563,7 @@ fn log_request(request: &reqwest::Request) {
   println!("{message}");
 }
 
+/// Helper to construct a log message for an HTTP response.
 fn log_message_response(response: &Option<reqwest::Response>, duration_ms: f64) -> String {
   let mut message = String::new();
   match response {
@@ -380,6 +580,7 @@ fn log_message_response(response: &Option<reqwest::Response>, duration_ms: f64) 
   message
 }
 
+/// Helper to log incoming HTTP response details.
 fn log_response(log_message_response: String, body: &Option<String>) {
   let mut message = String::new();
   write!(message, "{}{}", "<<<".bold().green(), log_message_response).unwrap();
@@ -433,7 +634,7 @@ request:
   url: http://example.com
   method: POST
   body:
-    file: "{}"
+    file: '{}'
 "#,
       file_path
     );

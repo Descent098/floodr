@@ -1,0 +1,182 @@
+---
+title: Assignment
+---
+import { Code, Aside } from '@astrojs/starlight/components';
+
+Floodr features an interpolation engine that will allow you to query data about responses. Assignment will expose different fields based on action type. For details about fields available check the action type's documentation page. Under the hood this uses the interpolation engine to stuff values into a context struct that you are accessing.
+
+<Aside type={"danger"}>
+It's important to note that actions run **sequentially**, meaning the order you define them in is relevent to their execution. This means assignments **must** happen before the variables are used.
+</Aside>
+
+
+## Examples
+Below are examples of how to use the feature
+
+### Simple example 
+
+For example, if you're testing redirects, and you want to assert that the response is a 301 you could setup a YAML file with:
+
+<Code title="benchmark.yml" lang="yaml" code={`# Assume a 301 is in place for /api/latest -> /api/v3
+base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch redirected route
+    request:
+      url: /api/latest
+    assign: latestRedirect`}/>
+
+<Aside type="note">
+
+If you want to follow along, below is the code for the server
+
+<details>
+    <summary>Click for code</summary>
+
+`cargo.toml`
+
+```toml
+[package]
+name = "gotham-redirect-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gotham = "0.7"
+```
+
+`src/main.rs`
+
+```rust
+use gotham::helpers::http::response::create_empty_response;
+use gotham::hyper::{Body, Response, StatusCode, Uri};
+use gotham::router::builder::*;
+use gotham::router::Router;
+use gotham::state::State;
+
+fn redirect_latest(state: State) -> (State, Response<Body>) {
+    let response = Response::builder()
+        .status(StatusCode::FOUND) // 302
+        .header("Location", "/api/v3")
+        .body(Body::empty())
+        .unwrap();
+
+    (state, response)
+}
+
+fn api_v3(state: State) -> (State, Response<Body>) {
+    let response = Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(Body::empty())
+        .unwrap();
+
+    (state, response)
+}
+
+fn router() -> Router {
+    build_simple_router(|route| {
+        route.get("/api/latest").to(redirect_latest);
+        route.get("/api/v3").to(api_v3);
+    })
+}
+
+pub fn main() {
+    println!("Listening on http://127.0.0.1:4896");
+    gotham::start("127.0.0.1:4896", router());
+}
+```
+
+</details>
+
+</Aside>
+
+Now the data about the response to `/api/latest` will be assigned to the variable `latestRedirect` which can be accessed in other actions. For example in [assertions](/floodr/benchmark-reference/assert):
+
+<Code title="benchmark.yml" lang="yaml" code={`# Assume a 301 is in place for /api/latest -> /api/v3
+base: 'http://localhost:4896'
+
+plan:
+  - name: Fetch redirected route
+    request:
+      url: /api/latest
+    assign: latestRedirect
+  - name: Assert request response code
+    assert:
+      key: latestRedirect.status
+      value: 200 # The status is set to the LAST code (which is the 200 when /api/v3 finishes)
+  - name: Assert new url
+    assert:
+      key: latestRedirect.url
+      value: http://localhost:4896/api/v3`}/>
+
+
+### Manual Assignment
+
+You can also use an action to directly assign a value:
+
+<Code title="benchmark.yml" lang="yaml" code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Assign value manually
+    assign:
+      key: ran
+      value: yep
+  - name: Checking manual assertion
+    assert:
+      key: ran
+      value: yep`}/>
+
+```bash
+$>floodr
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Assign value manually     ran=yep
+Checking manual assertion ran=yep?
+```
+
+## Troubleshooting
+
+If running into an issue where the systems says there is an unknown variable, the whole context will be dumped. For example consider this file where we forgot to assign the variable correctly:
+
+<Code title="benchmark.yml" lang="yaml" mark={["key: ren", "key: ran"]} code={`base: 'http://localhost:4896'
+
+plan:
+  - name: Assign value manually
+    assign:
+      key: ren
+      value: yep
+  - name: Checking manual assertion
+    assert:
+      key: ran
+      value: yep`}/>
+
+When we run 
+
+
+```bash
+$>floodr
+Concurrency 1
+Iterations 1
+Rampup 0
+Base URL http://localhost:4896
+
+Assign value manually     ren=yep
+Checking assertion        ran=yep?
+
+Unknown 'ran' variable!
+Context: {
+    "base": String("http://localhost:4896"),
+    "iteration": String("0"),
+    "ren": String("yep"),
+}
+
+thread 'main' (64096) panicked at src\\parsing\\interpolator.rs:85:11:
+Unknown 'ran' variable!
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+```
+
+We can see from the dumped information that `"ren"` is a `String` but `ran` does not exist in the context
