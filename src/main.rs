@@ -31,12 +31,8 @@ struct Cli {
   benchmark: String,
 
   /// Shows request statistics
-  #[arg(short = 's', long = "stats", conflicts_with="report")]
+  #[arg(short = 's', long = "stats")]
   stats: bool,
-
-  /// Sets a report file
-  #[arg(short = 'r', long = "report", conflicts_with="stats")]
-  report: Option<String>,
 
   /// Subcommand to execute
   #[command(subcommand)]
@@ -88,6 +84,11 @@ enum Commands {
     /// Threshold value in milliseconds
     threshold: String,
   },
+  /// Writes benchmark results to a report file
+  Reports {
+    /// Report file to write
+    report_file: String,
+  },
 }
 
 #[allow(unused_imports)]
@@ -117,6 +118,11 @@ impl Cli {
       base_override = Some(floodr::parsing::checker::get_base(report_file));
     }
 
+    let report_path = match &self.command {
+      Some(Commands::Reports { report_file }) => Some(report_file.as_str()),
+      _ => None,
+    };
+
     let benchmark_result = if let Some(Commands::Compare {
       ref report_file,
       ..
@@ -127,7 +133,7 @@ impl Cli {
 
       benchmark::execute_from_plan(benchmark_plan, base, false, self.no_check_certificate, self.quiet, self.request_timeout.as_deref().map_or(10, |t| t.parse().unwrap_or(10)), self.verbose, self.exec_terminal.clone())
     } else {
-      benchmark::execute(&self.benchmark, self.report.as_deref(), false, self.no_check_certificate, self.quiet, self.request_timeout.as_deref(), self.verbose, self.exec_terminal.as_deref(), &tags, base_override)
+      benchmark::execute(&self.benchmark, report_path, false, self.no_check_certificate, self.quiet, self.request_timeout.as_deref(), self.verbose, self.exec_terminal.as_deref(), &tags, base_override)
     };
 
     let list_reports = benchmark_result.reports;

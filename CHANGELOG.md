@@ -1,6 +1,6 @@
-# V 1.0.0
+# V 0.10.0
 
-*TBD* <!--TODO: Release date-->
+*April 15th 2026*
 
 The first release of `floodr` after converting it from `drill`. The focus for this release was improving documentation and structure of the project, while familiarizing myself with rust and the codebase more broadly. 
 
@@ -26,7 +26,7 @@ The first release of `floodr` after converting it from `drill`. The focus for th
 - **Breaking change** Updated compare system
     - Removed `--compare` and `--threshold` flags converting them to a subcommand. So `floodr --compare report.yml --threshold 2` becomes `floodr compare report.yml 2`
     - Report files now require a `base` field to know which domain to use
-- **Breaking change** updated `--report` 
+- **Breaking change** updated `--report` to `report` subcommand and changed file specification: 
     - File now includes a `base` value
     - File now includes a `plan` which is a copy of the plan used to generate the report
     - File now includes a `baseline` which is the measured value to compare against
@@ -46,7 +46,7 @@ The first release of `floodr` after converting it from `drill`. The focus for th
 - Added docstrings to all functions and structs
 - Overhauled `README.md`
 - Removed `SYNTAX.md`
-- Updated CLI documentation for `--compare`,`--report` and `--threshold` to be more clear
+- Updated CLI documentation for `compare`,`report` and `--threshold` to be more clear
 - Added `CHANGELOG.md` to see changes
 - Added issue and pull request templates
 
