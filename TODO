@@ -91,15 +91,15 @@
             - [ ] multi_file_request
             - [ ] multi_iter_request
             - [ ] multi_request
-        - [ ] Parsing
-            - [ ] checker
-            - [ ] comparison_loader
+        - [x] Parsing
+            - [x] checker
+            - [x] comparison_loader
             - [x] config
             - [x] interpolator
-            - [ ] mod
-            - [ ] reader
-            - [ ] tags
-            - [ ] writer
+            - [x] mod
+            - [x] reader
+            - [x] tags
+            - [x] writer
         - [x] Actions
             - [x] assert
             - [x] assign

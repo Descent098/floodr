@@ -1,14 +1,14 @@
----
-base: 'http://localhost:9000'
-iterations: 1
-concurrency: 1
+base: http://localhost:9000
 
 plan:
-  - name: Include comments
-    include: subtags.yml
-
-  - name: Tagged user request
+  - name: Fetch
     request:
-      url: /api/users/70
+      url: /
     tags:
-      - tag_user
+      - requests
+    assign: val
+  - name: assert response
+    assert:
+      key: val.status
+      value: 200
+    tags: ["asserts"]

@@ -7,10 +7,26 @@
 //! 
 //! ## Setup config from file
 //! 
-//! ```rust,ignore
+//! With a file:
+//! 
+//! `single_request.yml`
+//! ```yaml
+//! # An example of a simple single request
+//! base: http://localhost:4896
+//! 
+//! plan:
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
+//! ```
+//! 
+//! You could run
+//! 
+//! ```rust
 //! use floodr::parsing::config::Config;
 //!
-//! let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
+//! let config = Config::new("example/single_request.yml", false, false, false, 1000, false, None, None);
 //! ```
 //! 
 //! ## Setup config with default values
@@ -46,10 +62,26 @@ const NRAMPUP: i64 = 0;
 ///
 /// # Examples
 ///
-/// ```rust,ignore
+/// With a file:
+/// 
+/// `single_request.yml`
+/// ```yaml
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You could run
+/// 
+/// ```rust
 /// use floodr::parsing::config::Config;
 ///
-/// let config = Config::new("benchmark.yml", false, false, false, 1000, false, None, None);
+/// let config = Config::new("example/single_request.yml", false, false, false, 1000, false, None, None);
 /// ```
 #[derive(Clone)]
 pub struct Config {
@@ -90,8 +122,24 @@ impl Config {
   ///
   /// # Examples
   ///
-  /// ```rust,ignore
-  /// let config = Config::new("benchmark.yml", false, false, false, 10, true, None, None );
+  /// With a file:
+  /// 
+  /// `single_request.yml`
+  /// ```yaml
+  /// # An example of a simple single request
+  /// base: http://localhost:4896
+  /// 
+  /// plan:
+  /// - assign: gothamServer
+  ///   name: Fetch route
+  ///   request:
+  ///     url: /
+  /// ```
+  /// 
+  /// ```rust
+  /// use floodr::parsing::config::Config;
+  ///
+  /// let config = Config::new("example/single_request.yml", false, false, false, 1000, false, None, None);
   /// ```
   #[allow(clippy::too_many_arguments)]
   pub fn new(path: &str, relaxed_interpolations: bool, no_check_certificate: bool, quiet: bool,  timeout: u64, verbose: bool, exec_terminal: Option<String>, base_override: Option<String>) -> Config {

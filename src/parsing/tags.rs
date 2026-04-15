@@ -2,7 +2,35 @@
 //!
 //! Exposes structures and functionality to filter out or force include
 //! benchmark items based on their associated tags ( Ansible-style tags ).
-
+//! # Example
+//! 
+//! ```
+//! 
+//! let tags = floodr::parsing::tags::Tags::new(Some("requests"), None);
+//! 
+//! 
+//! let fetch_src = r#"
+//! name: Fetch
+//! request:
+//!   url: /
+//! tags: ["requests"]
+//! assign: val
+//! "#;
+//! let fetch_data = serde_yaml::from_str(fetch_src).expect("Failed to parse");
+//! 
+//! println!("{}",tags.should_skip_item(&fetch_data)); // false
+//! 
+//! let assert_src = r#"
+//! name: assert response
+//! assert:
+//!   key: val.status
+//!   value: 200
+//! tags: ["asserts"]
+//! "#;
+//! let assert_data = serde_yaml::from_str(assert_src).expect("Failed to parse");
+//! 
+//! println!("{}",tags.should_skip_item(&assert_data)); //true
+//! ```
 use crate::parsing::reader;
 use colored::*;
 use serde_yaml::Value;
@@ -40,8 +68,8 @@ impl<'a> Tags<'a> {
   ///
   /// # Examples
   ///
-  /// ```rust,ignore
-  /// let tags = Tags::new(Some("tag1,tag2"), Some("tag3"));
+  /// ```rust
+  /// let tags = floodr::parsing::tags::Tags::new(Some("tag1,tag2"), Some("tag3"));
   /// ```
   pub fn new(tags_option: Option<&'a str>, skip_tags_option: Option<&'a str>) -> Self {
     let tags: Option<HashSet<&str>> = tags_option.map(|m| m.split(',').map(|s| s.trim()).collect());
@@ -73,6 +101,35 @@ impl<'a> Tags<'a> {
   /// # Returns
   ///
   /// - `bool` - True if the item should be skipped, false otherwise.
+  /// 
+  /// # Example
+  /// 
+  /// ```
+  /// let tags = floodr::parsing::tags::Tags::new(Some("requests"), None);
+  /// 
+  /// 
+  /// let fetch_src = r#"
+  /// name: Fetch
+  /// request:
+  ///   url: /
+  /// tags: ["requests"]
+  /// assign: val
+  /// "#;
+  /// let fetch_data = serde_yaml::from_str(fetch_src).expect("Failed to parse");
+  /// 
+  /// println!("{}",tags.should_skip_item(&fetch_data)); // false
+  /// 
+  /// let assert_src = r#"
+  /// name: assert response
+  /// assert:
+  ///   key: val.status
+  ///   value: 200
+  /// tags: ["asserts"]
+  /// "#;
+  /// let assert_data = serde_yaml::from_str(assert_src).expect("Failed to parse");
+  /// 
+  /// println!("{}",tags.should_skip_item(&assert_data)); //true
+  /// ```
   pub fn should_skip_item(&self, item: &Value) -> bool {
     match item.get("tags").and_then(|v| v.as_sequence()) {
       Some(item_tags_raw) => {
@@ -111,6 +168,53 @@ impl<'a> Tags<'a> {
 /// # Panics
 ///
 /// - Panics if no items remain after filtering.
+/// 
+/// # Example
+/// 
+/// With the file
+/// 
+/// `tags.yml`
+/// ```yaml
+/// base: http://localhost:9000
+/// 
+/// plan:
+///   - name: Fetch
+///     request:
+///       url: /
+///     tags:
+///       - requests
+///     assign: val
+///   - name: assert response
+///     assert:
+///       key: val.status
+///       value: 200
+///     tags: ["asserts"]
+/// ```
+/// 
+/// You can then run:
+/// 
+/// ```
+/// let tags = floodr::parsing::tags::Tags::new(Some("requests,asserts"), None);
+/// // Prints: "Tags            ["asserts", "requests"]"
+/// 
+/// let data = floodr::parsing::tags::list_benchmark_file_tasks("example/tags.yml", &tags);
+/// 
+/// // Prints:
+/// //
+/// // name: Fetch
+/// // request:
+/// //   url: /
+/// // tags:
+/// // - requests
+/// // assign: val
+/// // 
+/// // name: assert response
+/// // assert:
+/// //   key: val.status
+/// //   value: 200
+/// // tags:
+/// // - asserts
+/// ```
 pub fn list_benchmark_file_tasks(benchmark_file: &str, tags: &Tags) {
   let docs = reader::read_file_as_yml(benchmark_file);
   let items = reader::read_yaml_doc_accessor(&docs[0], Some("plan"));
@@ -150,6 +254,35 @@ pub fn list_benchmark_file_tasks(benchmark_file: &str, tags: &Tags) {
 /// # Panics
 ///
 /// - Panics if the benchmark file contains no plan items.
+/// 
+/// # Example
+/// 
+/// With the file
+/// 
+/// `tags.yml`
+/// ```yaml
+/// base: http://localhost:9000
+/// 
+/// plan:
+///   - name: Fetch
+///     request:
+///       url: /
+///     tags:
+///       - requests
+///     assign: val
+///   - name: assert response
+///     assert:
+///       key: val.status
+///       value: 200
+///     tags: ["asserts"]
+/// ```
+/// 
+/// You can then run:
+/// 
+/// ```
+/// let data = floodr::parsing::tags::list_benchmark_file_tags("example/tags.yml");
+/// // prints: "Tags            ["asserts", "requests"]"
+/// ```
 pub fn list_benchmark_file_tags(benchmark_file: &str) {
   let docs = reader::read_file_as_yml(benchmark_file);
   let items = reader::read_yaml_doc_accessor(&docs[0], Some("plan"));

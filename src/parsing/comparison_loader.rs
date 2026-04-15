@@ -1,4 +1,51 @@
 //! Loader module for reconstructing benchmark plans from report files to use for comparisons
+//! 
+//! # Examples
+//! 
+//! With the report file:
+//! 
+//! `rep.yml`
+//! 
+//! ```yaml
+//! # An example report
+//! base: http://localhost:4896
+//! baseline:
+//! - duration: 92.64867
+//!   name: Fetch route
+//!   status: 200
+//! plan:
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
+//! ```
+//! 
+//! You would get:
+//! 
+//! ```
+//! let (base, plan_items, report_baseline) = floodr::parsing::comparison_loader::load_report_data("example/rep.yml");
+//! 
+//! println!("{}", base); // http://localhost:4896
+//! 
+//! println!("{:#?}", plan_items);
+//! // [
+//! //     Mapping {
+//! //         "assign": String("gothamServer"),
+//! //         "name": String("Fetch route"),
+//! //         "request": Mapping {
+//! //             "url": String("/"),
+//! //         },
+//! //     },
+//! // ]
+//! 
+//! println!("{:#?}", report_baseline);
+//! // [
+//! // - name: Fetch route
+//! //   duration: 92.64867
+//! // ]
+//! ```
+
+
 
 use serde_yaml::Value;
 use crate::engine::benchmark::{ActionItem, Benchmark};
@@ -14,6 +61,52 @@ use crate::parsing::reader;
 /// # Returns
 ///
 /// - `(String, Vec<Value>, Vec<actions::Report>)` - The base URL, the plan items, and the baseline results
+/// 
+/// # Examples
+/// 
+/// With the report file:
+/// 
+/// `rep.yml`
+/// 
+/// ```yaml
+/// # An example report
+/// base: http://localhost:4896
+/// baseline:
+/// - duration: 92.64867
+///   name: Fetch route
+///   status: 200
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You would get:
+/// 
+/// ```
+/// let (base, plan_items, report_baseline) = floodr::parsing::comparison_loader::load_report_data("example/rep.yml");
+/// 
+/// println!("{}", base); // http://localhost:4896
+/// 
+/// println!("{:#?}", plan_items);
+/// // [
+/// //     Mapping {
+/// //         "assign": String("gothamServer"),
+/// //         "name": String("Fetch route"),
+/// //         "request": Mapping {
+/// //             "url": String("/"),
+/// //         },
+/// //     },
+/// // ]
+/// 
+/// println!("{:#?}", report_baseline);
+/// // [
+/// // - name: Fetch route
+/// //   duration: 92.64867
+/// // ]
+/// ```
+/// 
 pub fn load_report_data(filepath: &str) -> (String, Vec<Value>, Vec<actions::Report>) {
   let docs = reader::read_file_as_yml(filepath);
   let doc = &docs[0];
@@ -39,6 +132,34 @@ pub fn load_report_data(filepath: &str) -> (String, Vec<Value>, Vec<actions::Rep
 /// # Returns
 ///
 /// - `Benchmark` - The reconstructed benchmark plan
+/// 
+/// # Examples
+/// 
+/// With the report file:
+/// 
+/// `rep.yml`
+/// 
+/// ```yaml
+/// # An example report
+/// base: http://localhost:4896
+/// baseline:
+/// - duration: 92.64867
+///   name: Fetch route
+///   status: 200
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You would get:
+/// ```
+/// let (base, plan_items, report_baseline) = floodr::parsing::comparison_loader::load_report_data("example/rep.yml");
+/// 
+/// let benchmark_plan = floodr::parsing::comparison_loader::load_from_items(plan_items);
+///```
+/// 
 pub fn load_from_items(items: Vec<Value>) -> Benchmark {
   let mut benchmark = Benchmark::new();
 

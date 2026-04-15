@@ -2,6 +2,51 @@
 //!
 //! Validates if the current runs are within the threshold difference
 //! of the previously recorded baseline metrics.
+//! 
+//! # Examples
+//! 
+//! With the report file:
+//! 
+//! `rep.yml`
+//! 
+//! ```yaml
+//! # An example report
+//! base: http://localhost:4896
+//! baseline:
+//! - duration: 92.64867
+//!   name: Fetch route
+//!   status: 200
+//! plan:
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
+//! ```
+//! 
+//! You would get:
+//! 
+//! ```rust
+//! let current_run = vec![
+//!     vec![
+//!         floodr::actions::Report {
+//!             name: "Fetch account".to_string(),
+//!             duration: 115.0,
+//!             status: 200,
+//!         },
+//!     ]
+//! ];
+//! 
+//! let result = floodr::parsing::checker::compare(&current_run, "example/rep.yml", &3.to_string());
+//! 
+//! // would print: "Fetch account             is 22ms slower than before"
+//! 
+//! match result {
+//!     Ok(_) => println!("No values above threshold"),
+//!     Err(count) => println!("{} Values over threshold", count) // "1 Values over threshold" would print
+//! };
+//! 
+//! ```
+//! 
 
 use colored::*;
 
@@ -17,6 +62,33 @@ use crate::parsing::reader;
 /// # Returns
 ///
 /// - `String` - The base URL found in the report.
+/// 
+/// # Example
+/// 
+/// With the report file:
+/// 
+/// `rep.yml`
+/// 
+/// ```yaml
+/// # An example report
+/// base: http://localhost:4896
+/// baseline:
+/// - duration: 92.64867
+///   name: Fetch route
+///   status: 200
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You would get:
+/// 
+/// ```rust
+/// let base = floodr::parsing::checker::get_base("example/rep.yml");
+/// println!("{}", base); // http://localhost:4896
+/// ```
 pub fn get_base(filepath: &str) -> String {
   let docs = reader::read_file_as_yml(filepath);
   let doc = &docs[0];
@@ -37,6 +109,50 @@ pub fn get_base(filepath: &str) -> String {
 /// # Returns
 ///
 /// - `Result<(), i32>` - `Ok(())` if all requests are within threshold, otherwise `Err(count)` where `count` is the number of slow requests.
+/// 
+/// # Examples
+/// 
+/// With the report file:
+/// 
+/// `rep.yml`
+/// 
+/// ```yaml
+/// # An example report
+/// base: http://localhost:4896
+/// baseline:
+/// - duration: 92.64867
+///   name: Fetch route
+///   status: 200
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You would get:
+/// 
+/// ```rust
+/// let current_run = vec![
+///     vec![
+///         floodr::actions::Report {
+///             name: "Fetch account".to_string(),
+///             duration: 115.0,
+///             status: 200,
+///         },
+///     ]
+/// ];
+/// 
+/// let result = floodr::parsing::checker::compare(&current_run, "example/rep.yml", &3.to_string());
+/// 
+/// // would print: "Fetch account             is 22ms slower than before"
+/// 
+/// match result {
+///     Ok(_) => println!("No values above threshold"),
+///     Err(count) => println!("{} Values over threshold", count) // "1 Values over threshold" would print
+/// };
+/// 
+/// ```
 pub fn compare(list_reports: &[Vec<Report>], filepath: &str, threshold: &str) -> Result<(), i32> {
   let threshold_value = match threshold.parse::<f64>() {
     Ok(v) => v,

@@ -2,6 +2,43 @@
 //!
 //! Processes YAML benchmark files, parsing single and multi-document configurations,
 //! as well as reading and decoding external CSV dependencies.
+//! 
+//! # Examples
+//!
+//! With a file:
+//! 
+//! `single_request.yml`
+//! ```yaml
+//! # An example of a simple single request
+//! base: http://localhost:4896
+//! 
+//! plan:
+//! - assign: gothamServer
+//!   name: Fetch route
+//!   request:
+//!     url: /
+//! ```
+//! 
+//! You could run
+//! 
+//! ```rust
+//! let content = floodr::parsing::reader::read_file_as_yml("example/single_request.yml");
+//! println!("{:?}",content);
+//! // [
+//! //   Mapping {
+//! //     "base": String("http://localhost:4896"), 
+//! //     "plan": Sequence [
+//! //       Mapping {
+//! //         "assign": String("gothamServer"), 
+//! //         "name": String("Fetch route"), 
+//! //         "request": Mapping {
+//! //           "url": String("/")
+//! //         }
+//! //       }
+//! //     ]
+//! //   }
+//! // ]
+//! ```
 
 use serde_yaml::{Mapping, Value};
 use std::fs::File;
@@ -23,9 +60,28 @@ use std::path::Path;
 /// - Panics if the file cannot be opened or read.
 ///
 /// # Examples
-///
-/// ```rust,ignore
-/// let content = read_file("test.txt");
+/// 
+/// With a file:
+/// 
+/// `single_request.yml`
+/// ```yaml
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You could run
+/// 
+/// ```rust
+/// let content = floodr::parsing::reader::read_file("example/single_request.yml");
+/// 
+/// println!("{:?}",content);
+/// // "# An example of a simple single request\r\nbase: http://localhost:4896\r\n\r\nplan:\r\n- assign: gothamServer\r\n  name: Fetch route\r\n  request:\r\n    url: /"
 /// ```
 pub fn read_file(filepath: &str) -> String {
   // Create a path to the desired file
@@ -59,6 +115,15 @@ pub fn read_file(filepath: &str) -> String {
 /// # Returns
 ///
 /// - `Vec<Value>` - A vector of parsed YAML documents.
+/// 
+/// # Example
+/// 
+/// ```rust, ignore
+/// let content = floodr::parsing::reader::read_file("example/single_request.yml");
+/// let plan = floodr::parsing::reader::parse_yaml_content(content);
+/// println!("{:?}",plan);
+/// ```
+/// 
 fn parse_yaml_content(content: &str) -> Vec<Value> {
   // serde_yaml doesn't support multiple documents natively, so we split by "---\n" and parse each
   let mut docs = Vec::new();
@@ -124,8 +189,39 @@ fn parse_yaml_content(content: &str) -> Vec<Value> {
 ///
 /// # Examples
 ///
-/// ```rust,ignore
-/// let docs = read_file_as_yml("benchmark.yml");
+/// With a file:
+/// 
+/// `single_request.yml`
+/// ```yaml
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You could run
+/// 
+/// ```rust
+/// let content = floodr::parsing::reader::read_file_as_yml("example/single_request.yml");
+/// println!("{:?}",content);
+/// // [
+/// //   Mapping {
+/// //     "base": String("http://localhost:4896"), 
+/// //     "plan": Sequence [
+/// //       Mapping {
+/// //         "assign": String("gothamServer"), 
+/// //         "name": String("Fetch route"), 
+/// //         "request": Mapping {
+/// //           "url": String("/")
+/// //         }
+/// //       }
+/// //     ]
+/// //   }
+/// // ]
 /// ```
 pub fn read_file_as_yml(filepath: &str) -> Vec<Value> {
   let content = read_file(filepath);
@@ -161,6 +257,41 @@ pub fn read_file_as_yml_from_str(content: &str) -> Vec<Value> {
 ///
 /// - Panics if the accessor is provided but missing in the document.
 /// - Panics if the resulting value is not a YAML sequence (array).
+/// 
+/// # Example
+/// 
+/// With a file:
+/// 
+/// `single_request.yml`
+/// ```yaml
+/// # An example of a simple single request
+/// base: http://localhost:4896
+/// 
+/// plan:
+/// - assign: gothamServer
+///   name: Fetch route
+///   request:
+///     url: /
+/// ```
+/// 
+/// You could run
+/// 
+/// ```
+/// let content = floodr::parsing::reader::read_file_as_yml("example/single_request.yml");
+/// let plan = floodr::parsing::reader::read_yaml_doc_accessor(&content[0], Some("plan"));
+/// 
+/// println!("{:?}",plan);
+/// // [
+/// //     Mapping {
+/// //         "assign": String("gothamServer"), 
+/// //         "name": String("Fetch route"), 
+/// //         "request": Mapping {
+/// //             "url": String("/")
+/// //             }
+/// //         }
+/// // ]
+/// ```
+/// 
 pub fn read_yaml_doc_accessor<'a>(doc: &'a Value, accessor: Option<&str>) -> &'a Vec<Value> {
   if let Some(accessor_id) = accessor {
     match doc.get(accessor_id).and_then(|v| v.as_sequence()) {
@@ -185,6 +316,32 @@ pub fn read_yaml_doc_accessor<'a>(doc: &'a Value, accessor: Option<&str>) -> &'a
 /// # Returns
 ///
 /// - `Vec<Value>` - A vector of YAML strings, one per line.
+/// 
+/// 
+/// # Example
+/// 
+/// With the file
+/// 
+/// `texts.txt`
+/// 
+/// ```text
+/// Lorem ipsum dolor sit amet.
+/// consetetur sadipscing elitr?
+/// sed diam nonumy eirmod tempor invidunt ut!
+/// ```
+/// 
+/// You could run
+/// 
+/// ```
+/// let text_data = floodr::parsing::reader::read_file_as_yml_array("example/fixtures/texts.txt");
+/// println!("{:?}", text_data);
+/// // [
+/// //     String("Lorem ipsum dolor sit amet."), 
+/// //     String("consetetur sadipscing elitr?"), 
+/// //     String("sed diam nonumy eirmod tempor invidunt ut!")
+/// // ]
+/// ```
+/// 
 pub fn read_file_as_yml_array(filepath: &str) -> Vec<Value> {
   let path = Path::new(filepath);
   let display = path.display();
@@ -221,6 +378,38 @@ pub fn read_file_as_yml_array(filepath: &str) -> Vec<Value> {
 /// # Returns
 ///
 /// - `Vec<Value>` - A vector of YAML mappings representing each row.
+/// 
+/// # Example
+/// 
+/// With the file:
+/// 
+/// `users.csv`
+/// ```csv
+/// id,name
+/// 2,John
+/// 3,Mary
+/// ```
+/// 
+/// You can run
+/// 
+/// ```
+/// let quote_char = "'".to_string().into_bytes()[0];
+/// 
+/// let user_data = floodr::parsing::reader::read_csv_file_as_yml("example/fixtures/users.csv", quote_char);
+/// println!("{:?}", user_data);
+/// 
+/// // [
+/// //     Mapping {
+/// //         "id": String("2"),
+/// //         "name": String("John")
+/// //     }, 
+/// //     Mapping {
+/// //         "id": String("3"), 
+/// //         "name": String("Mary")
+/// //     }
+/// // ]
+/// ```
+/// 
 pub fn read_csv_file_as_yml(filepath: &str, quote: u8) -> Vec<Value> {
   // TODO: Try to split this fn into two
   // Create a path to the desired file
