@@ -155,6 +155,7 @@ Sample standard deviation 23ms
 - Allow reports for PDF's with charts
 - Web interface for interactive sessions
 - improve the API for easier library usage
+- Improve code coverage
 
 ## FAQ
 
@@ -176,9 +177,10 @@ This project is a fork of [drill](https://github.com/fcsonline/drill), which was
 
 Unfortunately, due to questions around [maintainer status](https://github.com/fcsonline/drill/issues/200) I tentatively started a fork, and was intending to contribute upstream. As time went on I wanted more breaking changes. At this point while the core is largely the same, I changed **a lot**, and intend to change a lot more. I have limited time to work on side projects these days, so I just do work when I can, and while I have motivation. Likewise a lot of [pretty major bugs were left unsolved in the original](https://github.com/fcsonline/drill/pull/223) (no shade to the original dev, everyone gets busy), and I need something like this for work, so hard fork it is.
 
+</details>
+
+This project is a fork of [Drill](https://github.com/fcsonline/drill) (2017-present). Forked under the terms of the GLPV3. 
+
 The original project is still great, and worth a look. If you're feeling generous I would give the original dev a donation(I did), they did great work:
 
 [!["Buy Them A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/fcsonline)
-
-</details>
-

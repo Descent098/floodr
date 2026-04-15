@@ -2,7 +2,7 @@
 
 *TBD* <!--TODO: Release date-->
 
-The first release of floodr after converting it from drill. The focus for this release was improving documentation and structure of the project, while familiarizing myself with rust and the codebase more broadly. 
+The first release of `floodr` after converting it from `drill`. The focus for this release was improving documentation and structure of the project, while familiarizing myself with rust and the codebase more broadly. 
 
 ## Notes
 

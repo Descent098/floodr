@@ -78,7 +78,7 @@
         - [x] Build cargo site and move under `/api-reference`
         - [ ] Confirm it works. I have to wait until I merge the branch into `main` since I apparently can't run my branches until then
 - [ ] Library conversion; Currently you can't really use `floodr` as a lib, this should be more open so people can program behaviour if they want to
-    - [ ] Convert config to use `::from()` pattern
+    - [x] Convert config to use `::from()` pattern
         - [x] `::from_file()`
         - [x] `::from_plan()`
         - [x] `::from_file_contents()`
@@ -182,8 +182,7 @@
     - [x] Refactor root files into `engine` and `parsing` modules
     - [x] Document overall usage as a library (covered by docstrings)
     - [ ] CI/CD
-        - [ ] Fix clippy suggestions `cargo clippy -- -D warnings`
-        - [ ] Check coverage with `cargo tarpaulin --out Xml --ignore-tests`
+        - [x] Fix clippy suggestions `cargo clippy -- -D warnings`
         - [ ] Update existing workflows
         - [ ] Fix release workflow to automate platform builds
             - [ ] windows
@@ -218,3 +217,6 @@
         - [ ] Should the system panic as much as it does?
             - [ ] it currently panics in `assert.rs` when a panic runs, but this should probably? be an exit. I'm just not sure how to stack-unwind properly if I don't panic here, or what the implications are
             - [ ] If the functions panic then there use as a library are much more fragile
+    - [ ] Improve coverage with tarpaulin
+        - [ ] `cargo tarpaulin --out Xml --ignore-tests`
+        - [ ] `cargo tarpaulin --out Html --ignore-tests`
