@@ -4,7 +4,7 @@ version = "0.10.0"
 authors = ["Kieran Wood <kieran@canadiancoding.ca>","Ferran Basora <fcsonline@gmail.com>"]
 description = "A configurable, simple rust-based HTTP load testing system"
 repository = "https://github.com/descent098/floodr"
-keywords = ["performance", "http", "jmeter", "load-testing", "testing", "qa", "cli"]
+keywords = ["performance", "http", "load-testing", "testing", "cli"]
 license = "GPL-3.0"
 edition = "2024"
 
