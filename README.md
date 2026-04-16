@@ -4,6 +4,20 @@
 
 [Documentation site](https://kieranwood.ca/floodr)
 
+## What and Why?
+
+Floodr is meant to help generate a bunch of HTTP requests via a configuration file to help test and/or benchmark a web server. It's used to test performance, and failure characteristics for when and how a server slows down and/or dies. It has several use cases including:
+
+- Determining limits of how many requests you can handle simultaneously
+- Understanding performance degredation as load increases on your server
+- Testing changes between versions
+  - Complex flows still work (i.e. logging in, getting a token, then accessing an API)
+  - No performance degredations with new features
+- Help diagnose potential race conditions by firing many simultaneous events
+- Gethering statistics at various percentiles to help debug weird performance issues
+
+*Keep in mind you should only run floodr against your own systems (and not on production systems), in many places running this can be considered a DOS attack and might be illegal without permission*
+
 ## Demo
 
 [![asciicast](https://asciinema.org/a/NfDR2EDUYkyH57aO.svg)](https://asciinema.org/a/NfDR2EDUYkyH57aO)
